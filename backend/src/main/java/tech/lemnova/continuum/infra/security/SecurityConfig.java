@@ -94,10 +94,8 @@ public class SecurityConfig {
         
         // Allow multiple origins including Lovable domains
         config.setAllowedOriginPatterns(Arrays.asList(
-            "http://localhost:5173",
-            "https://continuumnodes.lovable.app",
-            "https://*.lovable.app",
-            "https://continuum-backend.onrender.com"
+            "http://appcontinuum.vercel.app",
+            "https://api-continuum.onrender.com"
         ));
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         config.setAllowedHeaders(Arrays.asList("*"));

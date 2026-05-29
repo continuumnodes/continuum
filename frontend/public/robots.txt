@@ -12,4 +12,4 @@ Allow: /
 
 User-agent: *
 Allow: /
-Sitemap: https://continuumnodes.lovable.app/sitemap.xml
+Sitemap: https://api-continuum.vercel.app/sitemap.xml

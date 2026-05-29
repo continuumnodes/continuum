@@ -590,7 +590,7 @@ export default function Dashboard() {
                 <div className="flex items-center gap-3">
                   <div>
                     <p className="text-[10px] uppercase tracking-[0.32em] text-white/30 font-mono">{t("dashboard_signal")}</p>
-                    <h2 className="mt-1 font-serif text-2xl text-white">{t("dashboard_score_evolution") || "Score evolution"}</h2>
+                    <h2 className="mt-1 font-serif text-2xl text-white">{t("Dashboard score evolution") || "Score evolution"}</h2>
                     <p className="mt-1 text-xs text-white/50">Knowledge graph gravity index</p>
                   </div>
                 </div>

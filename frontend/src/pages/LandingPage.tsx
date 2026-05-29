@@ -16,10 +16,15 @@ import landingInsights from "@/assets/landing-insights.jpg";
 
 export default function LandingPage() {
   const [authOpen, setAuthOpen] = useState(false);
-  const [authTab, setAuthTab] = useState<"login" | "register">("login");
+  const [authTab, setAuthTab] = useState<"login" | "register">("login"); // Hidden: kept for future use
   const navigate = useNavigate();
 
-  const openAuth = (tab: "login" | "register") => {
+  const openAuth = () => {
+    setAuthOpen(true);
+  };
+
+  // Hidden: old openAuth function kept for future use
+  const openAuthOld = (tab: "login" | "register") => {
     setAuthTab(tab);
     setAuthOpen(true);
   };
@@ -34,8 +39,7 @@ export default function LandingPage() {
         "Free to start, private by design. Bring your notes, your people, and your work into one connected space.",
       align: "left" as const,
       actions: [
-        { label: "Start free", variant: "primary" as const, onClick: () => openAuth("register") },
-        { label: "Sign in", variant: "secondary" as const, onClick: () => openAuth("login") },
+        { label: "Sign in with Google", variant: "primary" as const, onClick: () => openAuth() },
       ],
     },
     {
@@ -89,20 +93,19 @@ export default function LandingPage() {
         "Free to start, private by design. Bring your notes, your people, and your work into one connected space.",
       align: "center" as const,
       actions: [
-        { label: "Create account", variant: "primary" as const, onClick: () => openAuth("register") },
-        { label: "Sign in", variant: "secondary" as const, onClick: () => openAuth("login") },
+        { label: "Sign in with Google", variant: "primary" as const, onClick: () => openAuth() },
       ],
     },
   ];
 
   return (
     <div className="min-h-screen bg-black text-white overflow-x-hidden">
-      <Navbar onAuthOpen={() => openAuth("login")} />
+      <Navbar onAuthOpen={() => openAuth()} />
       <main>
         <ScrollGlobe sections={sections} className="bg-black" />
       </main>
       <Footer />
-      <AuthDialog open={authOpen} onOpenChange={setAuthOpen} initialTab={authTab} />
+      <AuthDialog open={authOpen} onOpenChange={setAuthOpen} initialTab="login" />
     </div>
   );
 }

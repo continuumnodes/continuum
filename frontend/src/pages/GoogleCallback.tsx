@@ -19,7 +19,11 @@ export default function GoogleCallback() {
     const accessToken = authTokens?.accessToken;
     const refreshToken = authTokens?.refreshToken;
     const searchParams = new URLSearchParams(window.location.search);
-    const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+
+    const rawHash = window.location.hash.replace(/^#/, "");
+    const [, hashQuery = ""] = rawHash.split("?", 2);
+    const hashParams = new URLSearchParams(hashQuery);
+
     const code = searchParams.get("code") ?? hashParams.get("code");
     const state = searchParams.get("state") ?? hashParams.get("state");
 
@@ -37,11 +41,26 @@ export default function GoogleCallback() {
 
     // Se recebemos um código para trocar no backend
     if (code) {
+      if (!state) {
+        console.error("Google Auth callback missing state parameter", { code, state });
+        toast({
+          title: "Authentication error",
+          description: "Google login redirect is missing state data. Please try again.",
+          variant: "destructive",
+        });
+        navigate("/");
+        return;
+      }
+
       if (hasCalled.current) return;
       hasCalled.current = true;
 
       authApi
-        .googleCallback(code, state || "")
+        .googleCallback({
+          code,
+          state,
+          redirectUri: window.location.origin + window.location.pathname,
+        })
         .then(async ({ data }) => {
           setTokens(data.accessToken, data.refreshToken);
           await refreshUser();

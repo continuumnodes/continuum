@@ -328,12 +328,8 @@ export const authApi = {
   
   // O backend ignora este redirectUri e usa o que ele mesmo enviou ao Google
   // (assinado dentro do state). Mandamos só para satisfazer a validação @NotBlank.
-  googleCallback: (code: string, state: string) =>
-    api.post("/api/auth/google/callback", {
-      code,
-      state,
-      redirectUri: window.location.origin + "/google-callback",
-    }),
+  googleCallback: (params: { code: string; state: string; redirectUri: string }) =>
+    api.post("/api/auth/google/callback", params),
 
   logout: () => api.post("/api/auth/logout", {}),
   me: () => api.get("/api/auth/me"),

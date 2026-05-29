@@ -22,24 +22,26 @@ const API_BASE_URL = getAPIBaseURL();
 export const ACCESS_TOKEN_KEY = "access_token";
 export const REFRESH_TOKEN_KEY = "refresh_token";
 
-// Use localStorage for both tokens so they persist across tabs/reloads.
 const getStoredToken = (key: string) => {
   if (typeof window === "undefined") return null;
-  return localStorage.getItem(key);
+  return sessionStorage.getItem(key) ?? localStorage.getItem(key);
 };
 
 export const setAuthTokens = (accessToken: string, _refreshToken?: string) => {
   if (typeof window === "undefined") return;
-  if (accessToken) {
-    localStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
-  }
+  sessionStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
+  // Persist refresh token across reloads so the client can renew sessions
+  // even when the backend doesn't issue an HttpOnly cookie.
   if (_refreshToken) {
     localStorage.setItem(REFRESH_TOKEN_KEY, _refreshToken);
   }
+  localStorage.removeItem(ACCESS_TOKEN_KEY);
 };
 
 export const clearAuthTokens = () => {
   if (typeof window === "undefined") return;
+  sessionStorage.removeItem(ACCESS_TOKEN_KEY);
+  sessionStorage.removeItem(REFRESH_TOKEN_KEY);
   localStorage.removeItem(ACCESS_TOKEN_KEY);
   localStorage.removeItem(REFRESH_TOKEN_KEY);
 };
@@ -182,28 +184,19 @@ class RefreshTokenManager {
   private async doRefresh(): Promise<string | null> {
     const refreshToken = getRefreshToken();
 
-    if (!refreshToken) {
-      console.warn("[RefreshTokenManager] Nenhum refresh token disponível, abortando refresh");
-      // Limpa tokens e dispara logout
-      clearAuthTokens();
-      if (typeof window !== "undefined") {
-        window.dispatchEvent(new CustomEvent("auth:logout"));
-      }
-      return null;
-    }
-
     try {
       console.log("[RefreshTokenManager] Iniciando refresh de token");
 
       // Use axios directly to avoid the response interceptor loop.
-      // The backend expects a JSON body: { "refreshToken": "..." }
+      // The backend may accept the refresh token either in the body or via
+      // an HttpOnly cookie (withCredentials). Send what we have.
       const { data } = await axios.post<{
         accessToken: string;
         refreshToken?: string;
         expiresIn?: number;
       }>(
         `${API_BASE_URL}/api/auth/refresh`,
-        { refreshToken },
+        refreshToken ? { refreshToken } : {},
         {
           timeout: 5000,
           withCredentials: true,
@@ -213,7 +206,7 @@ class RefreshTokenManager {
 
       if (data.accessToken) {
         console.log("[RefreshTokenManager] Token renovado com sucesso");
-
+        
         // Atualiza tokens (pode vir novo refresh token por rotation)
         setAuthTokens(data.accessToken, data.refreshToken);
 

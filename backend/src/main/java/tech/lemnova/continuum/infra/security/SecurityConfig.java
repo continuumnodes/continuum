@@ -94,7 +94,7 @@ public class SecurityConfig {
         
         // Allow multiple origins including Lovable domains
         config.setAllowedOriginPatterns(Arrays.asList(
-            "http://appcontinuum.vercel.app",
+            "https://appcontinuum.vercel.app",
             "https://api-continuum.onrender.com"
         ));
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));

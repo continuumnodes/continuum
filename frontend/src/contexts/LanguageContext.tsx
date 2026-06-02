@@ -112,6 +112,10 @@ const translations = {
     activities: "Activities",
     vault: "Vault",
     unlimited: "Unlimited",
+    profile_legal: "Legal",
+    profile_reviewLegal: "Review our terms and privacy policy.",
+    profile_terms: "Terms",
+    profile_privacy: "Privacy",
   },
   es: {
     nav_dashboard: "Panel",
@@ -202,6 +206,10 @@ const translations = {
     activities: "Actividades",
     vault: "Bóveda",
     unlimited: "Ilimitado",
+    profile_legal: "Legal",
+    profile_reviewLegal: "Revisa nuestros términos y la política de privacidad.",
+    profile_terms: "Términos",
+    profile_privacy: "Privacidad",
   },
   pt: {
     nav_dashboard: "Painel",
@@ -292,6 +300,10 @@ const translations = {
     activities: "Atividades",
     vault: "Vault",
     unlimited: "Ilimitado",
+    profile_legal: "Legal",
+    profile_reviewLegal: "Revise nossos termos e a política de privacidade.",
+    profile_terms: "Termos",
+    profile_privacy: "Privacidade",
   },
   fr: {
     nav_dashboard: "Tableau de bord",
@@ -382,6 +394,10 @@ const translations = {
     activities: "Activités",
     vault: "Coffre-fort",
     unlimited: "Illimité",
+    profile_legal: "Juridique",
+    profile_reviewLegal: "Consultez nos conditions et notre politique de confidentialité.",
+    profile_terms: "Conditions",
+    profile_privacy: "Confidentialité",
   },
 };
 

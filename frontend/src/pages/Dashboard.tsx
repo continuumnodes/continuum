@@ -7,7 +7,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import AppLayout from "@/components/AppLayout";
 import { dashboardApi, graphApi, metricsApi, notesApi, vaultApi, insightsApi } from "@/lib/api";
 import { usePlanGate } from "@/hooks/usePlanGate";
-import { getPlanLimits } from "@/lib/plan";
+import { getPlanLimits, isUnlimited } from "@/lib/plan";
 import { Progress } from "@/components/ui/progress";
 import { ChartContainer } from "@/components/ui/chart";
 import { Badge } from "@/components/ui/badge";
@@ -424,7 +424,7 @@ export default function Dashboard() {
 
   const vaultMaxMB = limits.maxVaultSizeMB;
   const storageUsed = `${vaultUsedMB.toFixed(1)} MB`;
-  const storageLimit = vaultMaxMB === -1 ? "Unlimited" : `${vaultMaxMB} MB`;
+  const storageLimit = isUnlimited(vaultMaxMB) ? "∞" : `${vaultMaxMB} MB`;
 
   useEffect(() => {
     if (vaultFilesList == null || usage == null || vaultFilesList.length === 0) return;
@@ -574,8 +574,8 @@ export default function Dashboard() {
 
         {/* CONTADORES / CARDS KPI */}
         <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-          <StatCard icon={FileText} label={t("notes_title")} value={totalNotes} hint={limits.maxNotes === -1 ? t("unlimited") || "Unlimited" : `of ${limits.maxNotes}`} />
-          <StatCard icon={Tag} label={t("entities_title")} value={totalEntities} hint={limits.maxEntities === -1 ? t("unlimited") || "Unlimited" : `of ${limits.maxEntities}`} />
+          <StatCard icon={FileText} label={t("notes_title")} value={totalNotes} hint={isUnlimited(limits.maxNotes) ? t("unlimited") || "Unlimited" : `of ${limits.maxNotes}`} />
+          <StatCard icon={Tag} label={t("entities_title")} value={totalEntities} hint={isUnlimited(limits.maxEntities) ? t("unlimited") || "Unlimited" : `of ${limits.maxEntities}`} />
           <StatCard icon={Network} label="Graph nodes" value={graphNodeCount} hint="In your network" />
           <StatCard icon={HardDrive} label="Storage" value={storageUsed} hint={`of ${storageLimit}`} />
         </section>
@@ -756,26 +756,26 @@ export default function Dashboard() {
                     <div className="flex items-center justify-between text-xs">
                       <span className="text-white/60">{t("notes")}</span>
                       <span className="text-white/80 font-mono text-[11px] tabular-nums">
-                        {usage.notesCount} / {limits.maxNotes === -1 ? "∞" : limits.maxNotes}
+                        {usage.notesCount} / {isUnlimited(limits.maxNotes) ? "∞" : limits.maxNotes}
                       </span>
                     </div>
-                    <Progress value={limits.maxNotes === -1 ? 0 : Math.min((usage.notesCount / limits.maxNotes) * 100, 100)} className="h-1 bg-white/5" />
+                    <Progress value={isUnlimited(limits.maxNotes) ? 0 : Math.min((usage.notesCount / limits.maxNotes) * 100, 100)} className="h-1 bg-white/5" />
                   </div>
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between text-xs">
                       <span className="text-white/60">{t("entities")}</span>
                       <span className="text-white/80 font-mono text-[11px] tabular-nums">
-                        {usage.entitiesCount} / {limits.maxEntities === -1 ? "∞" : limits.maxEntities}
+                        {usage.entitiesCount} / {isUnlimited(limits.maxEntities) ? "∞" : limits.maxEntities}
                       </span>
                     </div>
-                    <Progress value={limits.maxEntities === -1 ? 0 : Math.min((usage.entitiesCount / limits.maxEntities) * 100, 100)} className="h-1 bg-white/5" />
+                    <Progress value={isUnlimited(limits.maxEntities) ? 0 : Math.min((usage.entitiesCount / limits.maxEntities) * 100, 100)} className="h-1 bg-white/5" />
                   </div>
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between text-xs">
                       <span className="text-white/60">{t("vault")}</span>
                       <span className="text-white/80 font-mono text-[11px] tabular-nums">{storageUsed} / {storageLimit}</span>
                     </div>
-                    <Progress value={limits.maxVaultSizeMB === -1 ? 0 : Math.min((usage.vaultSizeMB / limits.maxVaultSizeMB) * 100, 100)} className="h-1 bg-white/5" />
+                    <Progress value={isUnlimited(limits.maxVaultSizeMB) ? 0 : Math.min((usage.vaultSizeMB / limits.maxVaultSizeMB) * 100, 100)} className="h-1 bg-white/5" />
                   </div>
                 </div>
               ) : (
@@ -786,11 +786,11 @@ export default function Dashboard() {
                 <div className="grid gap-3 grid-cols-2">
                   <div className="flex flex-col gap-0.5">
                     <span className="text-neutral-500 text-[9px] uppercase font-semibold tracking-wider">History retention</span>
-                    <span className="text-neutral-300 font-medium">{limits.historyDays === -1 ? "Unlimited" : `${limits.historyDays} days`}</span>
+                    <span className="text-neutral-300 font-medium">{isUnlimited(limits.historyDays) ? "Unlimited" : `${limits.historyDays} days`}</span>
                   </div>
                   <div className="flex flex-col gap-0.5">
                     <span className="text-neutral-500 text-[9px] uppercase font-semibold tracking-wider">Metadata limit</span>
-                    <span className="text-neutral-300 font-medium">{limits.maxMetadataSizeKb === -1 ? "Unlimited" : `${limits.maxMetadataSizeKb} KB`}</span>
+                    <span className="text-neutral-300 font-medium">{isUnlimited(limits.maxMetadataSizeKb) ? "Unlimited" : `${limits.maxMetadataSizeKb} KB`}</span>
                   </div>
                   <div className="flex items-center justify-between col-span-2 pt-2.5 border-t border-white/5 mt-0.5 text-neutral-400">
                     <span>Data export</span>

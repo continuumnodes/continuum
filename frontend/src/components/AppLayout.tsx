@@ -11,12 +11,12 @@ import {
   LogOut,
   User as UserIcon,
   Menu,
-  Layers,
+  GlobeAlt,
   Settings,
   Timer,
   Clock,
   Lock,
-  Sparkles,
+  BarChart3,
   X,
   FolderOpen,
 } from "@/lib/heroicons";
@@ -36,11 +36,11 @@ const mobileItems = [
   { to: "/", icon: LayoutDashboard, key: "nav_dashboard", end: true },
   { to: "/notes", icon: StickyNote, key: "nav_notes" },
   { to: "/entities", icon: Tag, key: "nav_entities" },
-  { to: "/insights", icon: Sparkles, key: "nav_insights" },
+  { to: "/insights", icon: BarChart3, key: "nav_insights" },
   { to: "/vault", icon: Lock, key: "nav_vault" },
   { to: "/projects", icon: FolderOpen, key: "nav_projects" },
   { to: "/activities", icon: Clock, key: "nav_activities" },
-  { to: "/graph", icon: Layers, key: "nav_graph" },
+  { to: "/graph", icon: GlobeAlt, key: "nav_graph" },
 ];
 
 

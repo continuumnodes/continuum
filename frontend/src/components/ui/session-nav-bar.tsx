@@ -9,9 +9,9 @@ import {
   HardDrive,
   LayoutDashboard,
   LogOut,
+  GlobeAlt,
   Search,
   Settings,
-  Sparkles,
   StickyNote,
   Tag,
   Timer,
@@ -19,7 +19,7 @@ import {
   Lock,
   Clock,
   FolderOpen,
-  Layers,
+  BarChart3,
 } from "@/lib/heroicons";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useState } from "react";
@@ -72,8 +72,8 @@ const trackingNav: NavItem[] = [
 ];
 
 const exploreNav: NavItem[] = [
-  { to: "/insights", label: "nav_insights", icon: Sparkles },
-  { to: "/graph", label: "nav_graph", icon: Layers },
+  { to: "/insights", label: "nav_insights", icon: BarChart3 },
+  { to: "/graph", label: "nav_graph", icon: GlobeAlt },
 ];
 
 function SidebarLink({

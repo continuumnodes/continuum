@@ -17,7 +17,7 @@ import {
 } from "@/lib/heroicons";
 import type { VaultFile } from "@/types";
 import { useAuth } from "@/contexts/AuthContext";
-import { getPlanLimits } from "@/lib/plan";
+import { getPlanLimits, isUnlimited } from "@/lib/plan";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { resolveVaultBlob, invalidateVaultBlob } from "@/lib/vault-blob";
 
@@ -241,7 +241,7 @@ export default function Vault() {
 
   const vaultUsedMB = files.reduce((t, f) => t + f.size / (1024 * 1024), 0);
   const vaultMaxMB = limits.maxVaultSizeMB;
-  const vaultPct = vaultMaxMB === -1 ? 0 : Math.min((vaultUsedMB / vaultMaxMB) * 100, 100);
+  const vaultPct = isUnlimited(vaultMaxMB) ? 0 : Math.min((vaultUsedMB / vaultMaxMB) * 100, 100);
 
   return (
     <AppLayout>
@@ -271,10 +271,10 @@ export default function Vault() {
                 <span>VOLUME CAPACITY</span>
               </div>
               <span>
-                {vaultMaxMB === -1 ? `${vaultUsedMB.toFixed(1)} MB` : `${vaultUsedMB.toFixed(1)} / ${vaultMaxMB} MB`}
+                {isUnlimited(vaultMaxMB) ? `${vaultUsedMB.toFixed(1)} MB` : `${vaultUsedMB.toFixed(1)} / ${vaultMaxMB} MB`}
               </span>
             </div>
-            <Progress value={vaultMaxMB === -1 ? 0 : vaultPct} className="h-[2px] bg-white/5 text-white" />
+            <Progress value={isUnlimited(vaultMaxMB) ? 0 : vaultPct} className="h-[2px] bg-white/5 text-white" />
           </div>
 
           {loading ? (

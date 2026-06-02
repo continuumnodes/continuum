@@ -21,8 +21,6 @@ export function usePlanGate(): PlanGateResult {
   const { usage, loading, refresh, applyUsageDelta } = useUsage();
   const limits = getPlanLimits(user);
 
-  const isUnlimited = (limit: number) => limit === -1;
-
   const canCreateNote = !usage ? true :
     isUnlimited(limits.maxNotes) || usage.notesCount < limits.maxNotes;
 

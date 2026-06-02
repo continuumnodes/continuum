@@ -1051,9 +1051,6 @@ export default function KnowledgeGraph() {
             {empty && !loading && (
               <div className="absolute inset-0 flex items-center justify-center z-10">
                 <div className="text-center space-y-4 max-w-xs px-6">
-                  <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto">
-                    <Brain className="w-8 h-8 text-primary" />
-                  </div>
                   <div className="space-y-2">
                     <h2 className="font-display text-lg font-semibold text-foreground">
                       No connections detected yet

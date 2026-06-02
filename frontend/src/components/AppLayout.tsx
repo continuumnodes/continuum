@@ -19,6 +19,7 @@ import {
   BarChart3,
   X,
   FolderOpen,
+  Squares2x2,
 } from "@/lib/heroicons";
 import {
   DropdownMenu,
@@ -33,7 +34,7 @@ import { SessionNavBar } from "@/components/ui/session-nav-bar";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 const mobileItems = [
-  { to: "/", icon: LayoutDashboard, key: "nav_dashboard", end: true },
+  { to: "/", icon: Squares2x2, key: "nav_dashboard", end: true },
   { to: "/notes", icon: StickyNote, key: "nav_notes" },
   { to: "/entities", icon: Tag, key: "nav_entities" },
   { to: "/insights", icon: BarChart3, key: "nav_insights" },

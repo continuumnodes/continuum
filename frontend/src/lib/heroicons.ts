@@ -127,6 +127,7 @@ export {
   ChartBarIcon as BarChart3,
   ChartBarIcon as GitGraph,
   Squares2X2Icon as Layers,
+  Squares2X2Icon as Squares2x2,
   ViewColumnsIcon as LayoutDashboard,
   PencilSquareIcon as Edit,
   PencilSquareIcon as PenLine,

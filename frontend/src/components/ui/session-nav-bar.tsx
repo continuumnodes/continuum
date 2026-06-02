@@ -20,6 +20,7 @@ import {
   Clock,
   FolderOpen,
   BarChart3,
+  Squares2x2,
 } from "@/lib/heroicons";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useState } from "react";
@@ -60,7 +61,7 @@ interface NavItem {
 }
 
 const primaryNav: NavItem[] = [
-  { to: "/", label: "nav_dashboard", icon: LayoutDashboard, end: true },
+  { to: "/", label: "nav_dashboard", icon: Squares2x2, end: true },
   { to: "/notes", label: "nav_notes", icon: StickyNote },
   { to: "/entities", label: "nav_entities", icon: Tag },
   { to: "/vault", label: "nav_vault", icon: Lock },

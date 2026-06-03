@@ -256,7 +256,7 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
             Import Markdown
           </DialogTitle>
           <p className="text-xs text-white/50 mt-1 leading-relaxed">
-            Upload .md files or a whole folder. Other formats are ignored. We detect people, projects and topics — you confirm what becomes an entity.
+            Upload .md files or a whole folder. Other formats are ignored. We detect people, projects and topics — you confirm what becomes an entity. <span className="text-white/30 text-[11px] block mt-1">Note: the import may contain errors; please verify your notes afterward.</span>
           </p>
         </DialogHeader>
 

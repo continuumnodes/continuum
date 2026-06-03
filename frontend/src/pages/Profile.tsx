@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AppLayout from "@/components/AppLayout";
+import MarkdownImportDialog from "@/components/import/MarkdownImportDialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { authApi } from "@/lib/api";
 import { usePlanGate } from "@/hooks/usePlanGate";
@@ -40,6 +41,7 @@ export default function Profile() {
   const [saving, setSaving] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [saveConfirmOpen, setSaveConfirmOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
 
   const handleExportData = async () => {
     if (exporting) return;
@@ -116,7 +118,18 @@ export default function Profile() {
           <p className="text-[10px] uppercase tracking-[0.2em] text-white/30">Settings</p>
           <h1 className="mt-2 font-serif text-5xl tracking-tight text-white">Profile</h1>
           <p className="mt-2 text-sm text-white/50">Manage your account credentials and application preferences.</p>
+          <div className="mt-6">
+            <Button onClick={() => setImportOpen(true)} className="h-10 px-4 text-sm">
+              Import Markdown
+            </Button>
+          </div>
         </header>
+
+        <MarkdownImportDialog
+          open={importOpen}
+          onOpenChange={setImportOpen}
+          onImported={() => toast({ title: "Markdown import completed" })}
+        />
 
         <div className="grid gap-12 lg:grid-cols-2 lg:gap-16">
 

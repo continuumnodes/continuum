@@ -485,4 +485,21 @@ export const insightsApi = {
   forgottenEntities: (limit = 10) => api.get("/api/insights/entities/forgotten", { params: { limit } }),
 };
 
+export const importApi = {
+  previewMarkdown: (files: File[]) => {
+    const form = new FormData();
+    files.forEach((f) => {
+      const path = (f as File & { webkitRelativePath?: string }).webkitRelativePath || f.name;
+      form.append("files", f, path);
+    });
+    return api.post("/api/import/markdown/preview", form, {
+      headers: { "Content-Type": "multipart/form-data" },
+      transformRequest: [(data) => data],
+      timeout: 180000,
+    });
+  },
+  commitMarkdown: (payload: unknown) =>
+    api.post("/api/import/markdown/commit", payload, { timeout: 120000 }),
+};
+
 export default api;

@@ -1,11 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AppLayout from "@/components/AppLayout";
-import MarkdownImportDialog from "@/components/import/MarkdownImportDialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { authApi } from "@/lib/api";
 import { usePlanGate } from "@/hooks/usePlanGate";
-import { getCurrentPlan, getPlanLimits, isUnlimited } from "@/lib/plan";
+import { getCurrentPlan, getPlanLimits } from "@/lib/plan";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,13 +19,15 @@ import {
   LockClosedIcon,
   ArrowPathIcon,
   ArrowDownTrayIcon,
+  ArrowUpTrayIcon,
   SunIcon,
   MoonIcon,
 } from "@heroicons/react/24/outline";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useLanguage } from "@/contexts/LanguageContext";
+import MarkdownImportDialog from "@/components/import/MarkdownImportDialog";
 
-const formatLimitValue = (value: number, suffix = "") => (isUnlimited(value) ? "∞" : `${value}${suffix}`);
+const formatLimitValue = (value: number, suffix = "") => (value === -1 ? "Unlimited" : `${value}${suffix}`);
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -34,7 +35,7 @@ export default function Profile() {
   const { toast } = useToast();
   const { usage, loading: usageLoading } = usePlanGate();
   const { theme, setTheme } = useTheme();
-  const { t } = useLanguage();
+  const { language, setLanguage, t } = useLanguage();
 
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
@@ -85,9 +86,9 @@ export default function Profile() {
 
   const planDetails = useMemo(
     () => [
-      { label: "Vault Limit", value: isUnlimited(limits.maxVaultSizeMB) ? "∞" : `${limits.maxVaultSizeMB} MB` },
-      { label: "Upload Metadata", value: isUnlimited(limits.maxMetadataSizeKb) ? "∞" : `${limits.maxMetadataSizeKb} KB` },
-      { label: "Version History", value: isUnlimited(limits.historyDays) ? "∞" : `${limits.historyDays} days` },
+      { label: "Vault Limit", value: limits.maxVaultSizeMB === -1 ? "Unlimited" : `${limits.maxVaultSizeMB} MB` },
+      { label: "Upload Metadata", value: limits.maxMetadataSizeKb === -1 ? "Unlimited" : `${limits.maxMetadataSizeKb} KB` },
+      { label: "Version History", value: limits.historyDays === -1 ? "Unlimited" : `${limits.historyDays} days` },
     ],
     [limits],
   );
@@ -118,18 +119,7 @@ export default function Profile() {
           <p className="text-[10px] uppercase tracking-[0.2em] text-white/30">Settings</p>
           <h1 className="mt-2 font-serif text-5xl tracking-tight text-white">Profile</h1>
           <p className="mt-2 text-sm text-white/50">Manage your account credentials and application preferences.</p>
-          <div className="mt-6">
-            <Button onClick={() => setImportOpen(true)} className="h-10 px-4 text-sm">
-              Import Markdown
-            </Button>
-          </div>
         </header>
-
-        <MarkdownImportDialog
-          open={importOpen}
-          onOpenChange={setImportOpen}
-          onImported={() => toast({ title: "Markdown import completed" })}
-        />
 
         <div className="grid gap-12 lg:grid-cols-2 lg:gap-16">
 
@@ -213,6 +203,24 @@ export default function Profile() {
                 <p className="text-xs text-white/30 truncate">Verified and connected via Google Sign-In.</p>
               </div>
             </div>
+
+            <div className="border border-white/5 bg-white/[0.01] p-5 rounded-sm space-y-3">
+              <div className="flex items-start gap-3">
+                <ArrowUpTrayIcon className="h-4 w-4 text-white/40 shrink-0 mt-0.5" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-medium text-white/70">Import Markdown</p>
+                  <p className="text-xs text-white/30 mt-0.5">
+                    Bring notes from Obsidian, Logseq, or any folder of .md files. Entities are detected automatically — you confirm.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setImportOpen(true)}
+                className="w-full h-9 border border-white/15 bg-transparent hover:border-white/40 text-white/80 hover:text-white rounded-sm text-sm font-medium transition-colors"
+              >
+                Import Markdown Files
+              </button>
+            </div>
           </div>
 
           {/* PREFERENCES SECTION */}
@@ -238,18 +246,22 @@ export default function Profile() {
                 </div>
               </div>
 
-
-
               <div className="flex items-center gap-4 py-4">
-                <ShieldCheckIcon className="h-4 w-4 text-foreground/30 shrink-0" />
+                <CalendarIcon className="h-4 w-4 text-foreground/30 shrink-0" />
                 <div className="flex-1">
-                  <p className="text-xs font-medium text-foreground/70">{t("profile_legal")}</p>
-                  <p className="text-xs text-foreground/30">{t("profile_reviewLegal")}</p>
+                  <p className="text-xs font-medium text-foreground/70">{t("common_language")}</p>
+                  <p className="text-xs text-foreground/30">{t("common_chooseLanguage")}</p>
                 </div>
-                <div className="flex flex-col gap-2 text-xs text-white/70">
-                  <a href="#/terms" className="hover:text-white underline underline-offset-4">{t("profile_terms")}</a>
-                  <a href="#/privacy" className="hover:text-white underline underline-offset-4">{t("profile_privacy")}</a>
-                </div>
+                <select
+                  value={language}
+                  onChange={(e) => setLanguage(e.target.value as "en" | "es" | "pt" | "fr")}
+                  className="bg-transparent border border-white/10 text-xs text-foreground/80 rounded-sm px-2 py-1 focus:outline-none focus:border-white/30"
+                >
+                  <option value="en">English</option>
+                  <option value="pt">Português</option>
+                  <option value="es">Español</option>
+                  <option value="fr">Français</option>
+                </select>
               </div>
             </div>
           </div>
@@ -267,7 +279,7 @@ export default function Profile() {
             ) : (
               <div className="grid gap-4 sm:grid-cols-3">
                 {usageResources.map((resource) => {
-                  const unlimited = isUnlimited(resource.max);
+                  const unlimited = resource.max === -1;
                   const percent = unlimited ? 100 : Math.min((resource.current / resource.max) * 100, 100);
 
                   return (
@@ -314,6 +326,11 @@ export default function Profile() {
           </section>
         </div>
       </div>
+      <MarkdownImportDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        onImported={() => { refreshUser(); }}
+      />
     </AppLayout>
   );
 }

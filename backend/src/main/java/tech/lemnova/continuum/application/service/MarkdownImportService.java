@@ -162,25 +162,15 @@ public class MarkdownImportService {
     }
 
     private String pickTitle(Map<String, List<String>> fm, Node root, String filename) {
-        for (String key : List.of("title", "name")) {
-            List<String> v = fm.get(key);
-            if (v != null && !v.isEmpty() && v.get(0) != null && !v.get(0).isBlank()) {
-                return v.get(0).trim();
-            }
-        }
-        Node n = root.getFirstChild();
-        while (n != null) {
-            if (n instanceof Heading h) {
-                String t = inlineText(h).trim();
-                if (!t.isBlank()) return t;
-            }
-            n = n.getNext();
-        }
-        String name = filename == null ? "Untitled" : filename;
+        // Title is always derived from the file name (without directory and extension).
+        // Frontmatter `title`/`name` and the first heading are intentionally ignored so
+        // imported notes preserve the user's original filenames.
+        String name = filename == null ? "" : filename;
         int slash = Math.max(name.lastIndexOf('/'), name.lastIndexOf('\\'));
         if (slash >= 0) name = name.substring(slash + 1);
         int dot = name.lastIndexOf('.');
         if (dot > 0) name = name.substring(0, dot);
+        name = name.trim();
         return name.isBlank() ? "Untitled" : name;
     }
 

@@ -33,6 +33,7 @@ import Insights from "./pages/Insights";
 import { Loader2 } from "@/lib/heroicons";
 import { extractAuthTokensFromLocation, sanitizeAuthRedirectUrl } from "@/lib/auth-redirect";
 import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/react";
 
 const queryClient = new QueryClient();
 
@@ -137,6 +138,7 @@ const App = () => (
       </TooltipProvider>
     </ThemeProvider>
     <Analytics />
+    <SpeedInsights />
   </QueryClientProvider>
 );
 

@@ -621,7 +621,12 @@ export default function NoteEditor() {
                     content={currentJSON.current}
                     onChange={handleEditorChange}
                     currentNoteId={note?.id}
+                    onSave={() => {
+                      if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+                      void doSave(title, currentJSON.current, type);
+                    }}
                   />
+
                 </div>
               )}
             </div>

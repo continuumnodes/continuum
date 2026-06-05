@@ -16,6 +16,12 @@ import Typography from "@tiptap/extension-typography";
 import CharacterCount from "@tiptap/extension-character-count";
 import Dropcursor from "@tiptap/extension-dropcursor";
 import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
+import Highlight from "@tiptap/extension-highlight";
+import Subscript from "@tiptap/extension-subscript";
+import Superscript from "@tiptap/extension-superscript";
+import Underline from "@tiptap/extension-underline";
+import { Mathematics } from "@tiptap/extension-mathematics";
+import "katex/dist/katex.min.css";
 import { common, createLowlight } from "lowlight";
 import tippy, { type Instance as TippyInstance } from "tippy.js";
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState, useCallback } from "react";
@@ -33,6 +39,12 @@ import { SlashCommands } from "./SlashCommands";
 import { VaultImage } from "./VaultImage";
 import { VaultPdf } from "./VaultPdf";
 import { VaultAudio } from "./VaultAudio";
+import { AutoPair } from "./extensions/AutoPair";
+import { EditorShortcuts } from "./extensions/EditorShortcuts";
+import { LinkHover } from "./extensions/LinkHover";
+import { SearchHighlight } from "./extensions/SearchHighlight";
+import { FindReplace } from "./FindReplace";
+import { StatusBar } from "./StatusBar";
 
 const IMAGE_MIME_RE = /^image\//i;
 const IMAGE_EXT_RE = /\.(png|jpe?g|webp|gif|svg)$/i;
@@ -233,16 +245,20 @@ interface Props {
   editable?: boolean;
   className?: string;
   currentNoteId?: string;
+  onSave?: () => void;
 }
 
 export const TiptapEditor = forwardRef<TiptapEditorHandle, Props>(
-  ({ content, onChange, editable = true, className, currentNoteId }, ref) => {
+  ({ content, onChange, editable = true, className, currentNoteId, onSave }, ref) => {
     const onChangeRef = useRef(onChange);
     onChangeRef.current = onChange;
+    const onSaveRef = useRef(onSave);
+    onSaveRef.current = onSave;
     const navigate = useNavigate();
 
     const [isUploading, setIsUploading] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
+    const [findOpen, setFindOpen] = useState(false);
     const fileInputRef = useRef<HTMLInputElement | null>(null);
     const { toast } = useToast();
 
@@ -251,9 +267,21 @@ export const TiptapEditor = forwardRef<TiptapEditorHandle, Props>(
     const editor = useEditor({
       extensions: [
         StarterKit.configure({
-          heading: { levels: [1, 2, 3] },
+          heading: { levels: [1, 2, 3, 4, 5, 6] },
           codeBlock: false,
           dropcursor: false,
+        }),
+        Underline,
+        Highlight.configure({ multicolor: false }),
+        Subscript,
+        Superscript,
+        Mathematics,
+        AutoPair,
+        LinkHover,
+        SearchHighlight,
+        EditorShortcuts.configure({
+          onSave: () => onSaveRef.current?.(),
+          onFind: () => setFindOpen(true),
         }),
         Placeholder.configure({
           placeholder: ({ node }) => {
@@ -492,6 +520,18 @@ export const TiptapEditor = forwardRef<TiptapEditorHandle, Props>(
               <div className="w-[1px] h-4 bg-white/10 mx-1" />
               <ToolbarBtn editor={editor} action={(e) => e.chain().focus().toggleHeading({ level: 1 }).run()} active={editor.isActive("heading", { level: 1 })} icon={Heading1} label="H1" />
               <ToolbarBtn editor={editor} action={(e) => e.chain().focus().toggleHeading({ level: 2 }).run()} active={editor.isActive("heading", { level: 2 })} icon={Heading2} label="H2" />
+              <button
+                type="button"
+                title="H3"
+                onMouseDown={(ev) => { ev.preventDefault(); editor.chain().focus().toggleHeading({ level: 3 }).run(); }}
+                className={`px-1.5 h-7 text-[11px] font-semibold rounded-lg transition-colors ${editor.isActive("heading", { level: 3 }) ? "bg-primary/20 text-primary" : "text-neutral-400 hover:bg-white/10 hover:text-white"}`}
+              >H3</button>
+              <button
+                type="button"
+                title="Highlight"
+                onMouseDown={(ev) => { ev.preventDefault(); editor.chain().focus().toggleHighlight().run(); }}
+                className={`px-1.5 h-7 text-[11px] rounded-lg transition-colors ${editor.isActive("highlight") ? "bg-yellow-300/30 text-yellow-200" : "text-neutral-400 hover:bg-white/10 hover:text-white"}`}
+              >==</button>
               <ToolbarBtn editor={editor} action={(e) => e.chain().focus().toggleBlockquote().run()} active={editor.isActive("blockquote")} icon={Quote} label="Quote" />
               <ToolbarBtn editor={editor} action={(e) => e.chain().focus().toggleBulletList().run()} active={editor.isActive("bulletList")} icon={List} label="Bullets" />
               <ToolbarBtn editor={editor} action={(e) => e.chain().focus().toggleOrderedList().run()} active={editor.isActive("orderedList")} icon={ListOrdered} label="Numbered" />
@@ -582,7 +622,9 @@ export const TiptapEditor = forwardRef<TiptapEditorHandle, Props>(
             </div>
           )}
           <EditorContent editor={editor} />
+          <StatusBar editor={editor} />
         </div>
+        <FindReplace editor={editor} open={findOpen} onClose={() => setFindOpen(false)} />
       </>
     );
   }

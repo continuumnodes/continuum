@@ -32,6 +32,7 @@ import NotFound from "./pages/NotFound";
 import Insights from "./pages/Insights";
 import { Loader2 } from "@/lib/heroicons";
 import { extractAuthTokensFromLocation, sanitizeAuthRedirectUrl } from "@/lib/auth-redirect";
+import { Analytics } from "@vercel/analytics/react";
 
 const queryClient = new QueryClient();
 
@@ -135,6 +136,7 @@ const App = () => (
         </HashRouter>
       </TooltipProvider>
     </ThemeProvider>
+    <Analytics />
   </QueryClientProvider>
 );
 

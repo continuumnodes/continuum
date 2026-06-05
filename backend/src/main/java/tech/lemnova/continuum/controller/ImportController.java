@@ -26,8 +26,8 @@ import java.util.List;
 public class ImportController {
 
     private static final int MAX_FILES = 200;
-    private static final long MAX_BYTES_PER_FILE = 2 * 1024 * 1024L;
-    private static final long MAX_TOTAL_BYTES = 25 * 1024 * 1024L;
+    private static final long MAX_BYTES_PER_FILE = 2 * 1024 * 1024L; // 2MB per file
+    private static final long MAX_TOTAL_BYTES = 25 * 1024 * 1024L;   // 25MB total
 
     private final MarkdownImportOrchestrator orchestrator;
 
@@ -47,8 +47,13 @@ public class ImportController {
             if (uploads.size() >= MAX_FILES) break;
             if (f == null || f.isEmpty()) continue;
             String name = f.getOriginalFilename() == null ? "untitled.md" : f.getOriginalFilename();
+            // Strip directory path to compare just the basename.
             int slash = Math.max(name.lastIndexOf('/'), name.lastIndexOf('\\'));
             String base = slash >= 0 ? name.substring(slash + 1) : name;
+            // Only accept real `.md` files. Reject every other extension
+            // (.markdown, .txt, .png, .jpg, .opus, .mp3, .pdf, .json, .html…),
+            // hidden files/folders (`.DS_Store`, `.obsidian/…`) and obvious
+            // binary content renamed as .md.
             if (!isAcceptedMarkdownFilename(name, base)) continue;
             if (f.getSize() > MAX_BYTES_PER_FILE) continue;
             byte[] bytes = f.getBytes();

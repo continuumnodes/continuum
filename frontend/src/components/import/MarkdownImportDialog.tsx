@@ -57,7 +57,7 @@ const isStrictMarkdownFile = (file: File) => {
   return true;
 };
 
-const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\\]\\]/g, "\\$&");
+const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 const tiptapPlainText = (node: unknown): string => {
   if (!node || typeof node !== "object") return "";
@@ -148,6 +148,8 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
         const initial: Record<string, { accept: boolean; type: EntityType; name: string }> = {};
         for (const c of data.candidates) {
           initial[c.key] = {
+            // Auto-accept anything the AI or wiki-links/frontmatter surfaced.
+            // LOW = pure capitalisation heuristic → user opts in manually.
             accept: (c.confidence === "HIGH" || c.confidence === "MEDIUM") && !c.existing,
             type: c.suggestedType,
             name: c.name,
@@ -256,7 +258,7 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
             Import Markdown
           </DialogTitle>
           <p className="text-xs text-white/50 mt-1 leading-relaxed">
-            Upload .md files or a whole folder. Other formats are ignored. We detect people, projects and topics — you confirm what becomes an entity. <span className="text-white/30 text-[11px] block mt-1">Note: the import may contain errors; please verify your notes afterward.</span>
+            Upload .md files or a whole folder. Other formats are ignored. We detect people, projects and topics — you confirm what becomes an entity.
           </p>
         </DialogHeader>
 

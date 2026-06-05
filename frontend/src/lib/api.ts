@@ -462,6 +462,15 @@ export const vaultApi = {
   entityIndex: () => api.get("/api/vault/entity-index"),
 };
 
+export const preferencesApi = {
+  get: () => api.get("/api/account/preferences"),
+  save: (data: unknown) =>
+    api.put("/api/account/preferences", data, {
+      headers: { "Content-Type": "application/json" },
+    }),
+};
+
+
 export const timeTrackingApi = {
   startTimer: (entityId: string) => api.post("/api/time-tracking/start", { entityId }),
   stopTimer: (sessionId: string, note?: string) => api.post("/api/time-tracking/stop", { sessionId, note: note || null }),
@@ -488,10 +497,8 @@ export const insightsApi = {
 export const importApi = {
   previewMarkdown: (files: File[]) => {
     const form = new FormData();
-    files.forEach((f) => {
-      const path = (f as File & { webkitRelativePath?: string }).webkitRelativePath || f.name;
-      form.append("files", f, path);
-    });
+    files.forEach((f) => form.append("files", f, f.name));
+
     return api.post("/api/import/markdown/preview", form, {
       headers: { "Content-Type": "multipart/form-data" },
       transformRequest: [(data) => data],

@@ -99,7 +99,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       <div className="fixed left-0 right-0 top-0 z-40 flex items-center gap-3 border-b border-border bg-background/80 px-4 py-3 backdrop-blur-xl lg:hidden">
         <div className="flex items-center gap-2">
           <img src="/favicon.ico" alt="Continuum" className="h-7 w-7 rounded-lg object-contain" />
-          <span className="text-base font-mono tracking-tight">Continuum</span>
+          <span className="text-base font-serif tracking-tight">Continuum</span>
         </div>
 
         <div className="flex-1" />

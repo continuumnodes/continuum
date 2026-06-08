@@ -5,6 +5,7 @@ import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { notesApi, vaultApi } from "@/lib/api";
 import { usePlanGate } from "@/hooks/usePlanGate";
+import { useCreateNote } from "@/hooks/useCreateNote";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
 import UpgradeModal from "@/components/UpgradeModal";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -123,7 +124,8 @@ export default function Notes() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { loading: authLoading } = useRequireAuth();
-  const { canCreateNote, getLimitMessage, refresh, applyUsageDelta } = usePlanGate();
+  const { getLimitMessage, refresh, applyUsageDelta } = usePlanGate();
+  const { createNote, creating } = useCreateNote({ onLimitReached: () => setUpgradeOpen(true) });
 
   const [notes, setNotes] = useState<NoteSummary[]>([]);
   const [types, setTypes] = useState<string[]>([]);
@@ -143,14 +145,8 @@ export default function Notes() {
   // Drag-drop upload to vault
   const [dragActive, setDragActive] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [creating, setCreating] = useState(false);
-  const creatingRef = useRef(false);
 
-  useEffect(() => {
-    return () => {
-      creatingRef.current = false;
-    };
-  }, []);
+
 
   // Edge swipe to open mobile filter drawer
   const swipeRef = useRef<{ x: number; y: number; t: number } | null>(null);
@@ -202,43 +198,10 @@ export default function Notes() {
     }
   };
 
-  const handleCreate = async () => {
-    if (!canCreateNote) {
-      setUpgradeOpen(true);
-      return;
-    }
-
-    const tempId = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
-      ? crypto.randomUUID()
-      : `temp-${Math.random().toString(36).slice(2, 10)}`;
-
-    applyUsageDelta({ notesCount: 1 });
-    setCreating(true);
-    creatingRef.current = true;
-    navigate(`/notes/${tempId}?optimistic=true&tempId=${tempId}`);
-
-    notesApi.create("Untitled", "")
-      .then(({ data }) => {
-        if (data?.id) {
-          void refresh();
-          navigate(`/notes/${data.id}?tempId=${tempId}`, { replace: true });
-        } else {
-          throw new Error("Invalid response from server");
-        }
-      })
-      .catch((err: any) => {
-        applyUsageDelta({ notesCount: -1 });
-        if (err.response?.status === 403) {
-          setUpgradeOpen(true);
-        } else {
-          toast({ title: "Error", description: err.response?.data?.message, variant: "destructive" });
-        }
-        navigate("/notes");
-      })
-      .finally(() => {
-        if (creatingRef.current) setCreating(false);
-      });
+  const handleCreate = () => {
+    void createNote();
   };
+
 
   const confirmDelete = async () => {
     if (!pendingDelete) return;

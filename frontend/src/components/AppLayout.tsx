@@ -1,9 +1,11 @@
-import { ReactNode, useState } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { CommandPalette } from "@/components/CommandPalette";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { useCreateNote } from "@/hooks/useCreateNote";
+import UpgradeModal from "@/components/UpgradeModal";
 import {
   LayoutDashboard,
   StickyNote,
@@ -20,6 +22,8 @@ import {
   X,
   FolderOpen,
   Squares2x2,
+  Plus,
+  Loader2,
 } from "@/lib/heroicons";
 import {
   DropdownMenu,
@@ -29,7 +33,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MobileSidebar } from "@/components/sidebar/MobileSidebar";
+
 import { SessionNavBar } from "@/components/ui/session-nav-bar";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -44,6 +48,14 @@ const mobileItems = [
   { to: "/graph", icon: GlobeAlt, key: "nav_graph" },
 ];
 
+// Primary tabs shown in the bottom navigation bar on mobile.
+const mobileTabs = [
+  { to: "/", icon: Squares2x2, key: "nav_dashboard", end: true },
+  { to: "/notes", icon: StickyNote, key: "nav_notes" },
+  { to: "/entities", icon: Tag, key: "nav_entities" },
+  { to: "/insights", icon: BarChart3, key: "nav_insights" },
+];
+
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   const { user, logout } = useAuth();
@@ -51,8 +63,24 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const { t } = useLanguage();
   const isGraphPage = location.pathname.startsWith("/graph");
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  
   const [confirmLogoutOpen, setConfirmLogoutOpen] = useState(false);
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
+  const { createNote, creating } = useCreateNote({ onLimitReached: () => setUpgradeOpen(true) });
+  const isEditorPage = /^\/notes\/.+/.test(location.pathname);
+
+  // Keyboard shortcut: ⌘/Ctrl + Shift + N to create a note from anywhere.
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === "n") {
+        e.preventDefault();
+        void createNote();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [createNote]);
+
 
   const handleLogout = async () => {
     await logout();
@@ -71,87 +99,15 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       <CommandPalette />
 
       {/* Mobile top bar */}
-      <div className="fixed left-0 right-0 top-0 z-40 flex items-center justify-between gap-3 border-b border-border bg-background/85 px-4 py-3 backdrop-blur-xl lg:hidden">
-        <button
-          type="button"
-          onClick={() => setSidebarOpen(true)}
-            className="grid h-10 w-10 place-items-center rounded-md bg-muted text-foreground transition-colors hover:bg-accent"
-          aria-label="Open navigation"
-        >
-          <Menu className="h-5 w-5" />
-        </button>
+      <div className="fixed left-0 right-0 top-0 z-40 flex items-center gap-3 border-b border-border bg-background/80 px-4 py-3 backdrop-blur-xl lg:hidden">
+        <div className="flex items-center gap-2">
+          <img src="/favicon.ico" alt="Continuum" className="h-7 w-7 rounded-lg object-contain" />
+          <span className="text-base font-semibold tracking-tight">Continuum</span>
+        </div>
 
         <div className="flex-1" />
-
-        <div className="h-10 w-10" />
       </div>
 
-      {/* Mobile drawer */}
-      <MobileSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)}>
-        <div className="flex h-full flex-col bg-sidebar backdrop-blur-xl">
-          <div className="flex h-[54px] items-center justify-between border-b border-sidebar-border px-4">
-            <div className="flex items-center gap-2">
-              <img src="/favicon.ico" alt="Continuum" className="h-6 w-6 rounded object-contain" />
-              <span className="text-sm font-semibold">Continuum</span>
-            </div>
-            <button
-              onClick={() => setSidebarOpen(false)}
-              className="grid h-8 w-8 place-items-center rounded-md text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-              aria-label="Close"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-          <nav className="flex-1 overflow-y-auto p-2">
-            {mobileItems.map((it) => (
-              <NavLink
-                key={it.to}
-                to={it.to}
-                end={it.end}
-                onClick={() => setSidebarOpen(false)}
-                className={({ isActive }) =>
-                  cn(
-                    "flex h-10 items-center gap-3 rounded-md px-3 text-sm text-sidebar-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-                    isActive && "bg-sidebar-accent text-sidebar-accent-foreground",
-                  )
-                }
-              >
-                <it.icon className="h-4 w-4" />
-                <span>{t(it.key)}</span>
-              </NavLink>
-            ))}
-          </nav>
-          <div className="border-t border-sidebar-border p-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left transition-colors hover:bg-sidebar-accent">
-                  <div className="grid h-7 w-7 place-items-center rounded-full bg-sidebar-primary text-[11px] font-bold text-sidebar-primary-foreground">
-                    {initial}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-sidebar-accent-foreground">{display}</p>
-                    <p className="hidden truncate text-[11px] text-sidebar-foreground/70">{user?.plan || "FREE"}</p>
-                  </div>
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent side="top" align="start" className="w-56">
-                <DropdownMenuLabel className="text-xs text-zinc-500">{user?.email}</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => { navigate("/profile"); setSidebarOpen(false); }}>
-                  <UserIcon className="mr-2 h-4 w-4" /> {t("nav_profile")}
-                </DropdownMenuItem>
-                <DropdownMenuItem className="hidden" onClick={() => { navigate("/subscription"); setSidebarOpen(false); }}>
-                  <Settings className="mr-2 h-4 w-4" /> {t("nav_subscription")}
-                </DropdownMenuItem>
-                <DropdownMenuSeparator className="hidden" />
-                <DropdownMenuItem onClick={handleLogoutRequest}>
-                  <LogOut className="mr-2 h-4 w-4" /> {t("nav_logout")}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </div>
-      </MobileSidebar>
       <ConfirmDialog
         open={confirmLogoutOpen}
         onOpenChange={setConfirmLogoutOpen}
@@ -171,7 +127,106 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       <main className="min-w-0 flex-1 overflow-auto bg-background lg:ml-[3.25rem]">
         <div className="h-14 lg:hidden" />
         {children}
+        {/* Spacer so content isn't hidden behind the mobile bottom nav */}
+        <div className="h-[calc(4.5rem+env(safe-area-inset-bottom))] lg:hidden" />
       </main>
+
+      {/* Mobile bottom tab bar */}
+      {!isGraphPage && (
+        <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/85 backdrop-blur-xl lg:hidden">
+          <div className="flex items-stretch justify-around px-1 pb-[env(safe-area-inset-bottom)] pt-1">
+            {mobileTabs.map((it) => (
+              <NavLink
+                key={it.to}
+                to={it.to}
+                end={it.end}
+                className={({ isActive }) =>
+                  cn(
+                    "flex flex-1 flex-col items-center gap-1 rounded-xl px-1 py-2 text-[10px] font-medium text-muted-foreground transition-colors active:scale-95",
+                    isActive && "text-primary",
+                  )
+                }
+              >
+                {({ isActive }) => (
+                  <>
+                    <span
+                      className={cn(
+                        "grid h-8 w-12 place-items-center rounded-lg transition-colors",
+                        isActive && "bg-primary/10",
+                      )}
+                    >
+                      <it.icon className="h-5 w-5" />
+                    </span>
+                    <span className="leading-none">{t(it.key)}</span>
+                  </>
+                )}
+              </NavLink>
+            ))}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className="flex flex-1 flex-col items-center gap-1 rounded-xl px-1 py-2 text-[10px] font-medium text-muted-foreground transition-colors active:scale-95 data-[state=open]:text-primary"
+                >
+                  <span className="grid h-8 w-12 place-items-center rounded-lg">
+                    <Menu className="h-5 w-5" />
+                  </span>
+                  <span className="leading-none">{t("nav_more")}</span>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent side="top" align="end" className="mb-2 w-56">
+                <DropdownMenuItem onClick={() => navigate("/projects")}>
+                  <FolderOpen className="mr-2 h-4 w-4" /> {t("nav_projects")}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/activities")}>
+                  <Clock className="mr-2 h-4 w-4" /> {t("nav_activities")}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/graph")}>
+                  <GlobeAlt className="mr-2 h-4 w-4" /> {t("nav_graph")}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/vault")}>
+                  <Lock className="mr-2 h-4 w-4" /> {t("nav_vault")}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel className="text-xs text-zinc-500">{user?.email}</DropdownMenuLabel>
+                <DropdownMenuItem onClick={() => navigate("/profile")}>
+                  <UserIcon className="mr-2 h-4 w-4" /> {t("nav_profile")}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleLogoutRequest}>
+                  <LogOut className="mr-2 h-4 w-4" /> {t("nav_logout")}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </nav>
+      )}
+
+      {/* Global quick-create note button */}
+      {!isEditorPage && (
+        <button
+          type="button"
+          onClick={() => void createNote()}
+          disabled={creating}
+          aria-label={t("notes_new") || "New note"}
+          title={t("notes_new") || "New note"}
+          className={cn(
+            "fixed right-4 z-50 grid place-items-center rounded-full bg-primary text-primary-foreground shadow-lg transition-transform active:scale-90 hover:brightness-110 disabled:opacity-70",
+            "h-14 w-14",
+            // Sit above the mobile bottom nav, normal corner on desktop
+            isGraphPage
+              ? "bottom-4"
+              : "bottom-[calc(4.75rem+env(safe-area-inset-bottom))] lg:bottom-6",
+          )}
+        >
+          {creating ? <Loader2 className="h-6 w-6 animate-spin" /> : <Plus className="h-6 w-6" />}
+        </button>
+      )}
+
+      <UpgradeModal
+        open={upgradeOpen}
+        onOpenChange={setUpgradeOpen}
+        reason="You've reached the notes limit for your plan."
+      />
     </div>
   );
 }

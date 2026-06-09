@@ -239,10 +239,10 @@ export default function KnowledgeGraph() {
     if (nodes.length === 0 || alphaRef.current < 0.005) return;
 
     // Constantes aprimoradas
-    const repulsion = 450; 
-    const attraction = 0.015; 
-    const damping = 0.90; // Deslizamento suave
-    const centerForce = 0.015; 
+    const repulsion = nodes.length > 180 ? 280 : 450;
+    const attraction = nodes.length > 180 ? 0.028 : 0.015;
+    const damping = nodes.length > 120 ? 0.78 : 0.90; // Mais amortecimento em grafos maiores
+    const centerForce = 0.02; 
     const periodPull = clusterRef.current ? 0.03 : 0;
     const alpha = alphaRef.current;
 
@@ -319,12 +319,17 @@ export default function KnowledgeGraph() {
       if (n === drag) continue;
       n.vx *= damping;
       n.vy *= damping;
+
+      const maxVel = 12;
+      n.vx = Math.max(-maxVel, Math.min(maxVel, n.vx));
+      n.vy = Math.max(-maxVel, Math.min(maxVel, n.vy));
+
       n.x += n.vx * alpha;
       n.y += n.vy * alpha;
     }
 
     // Resfriamento logarítmico para parada suave
-    alphaRef.current = Math.max(0.0, alphaRef.current * 0.985);
+    alphaRef.current = Math.max(0.0, alphaRef.current * 0.93);
   }, []);
 
   // ── Renderização Avançada ────────────────────────────────────────────
@@ -557,9 +562,9 @@ export default function KnowledgeGraph() {
           id: n.id,
           label: n.label,
           type: String(n.type),
-          // Dispersão inicial circular e orgânica
-          x: (Math.random() - 0.5) * 500,
-          y: (Math.random() - 0.5) * 500,
+          // Dispersão inicial mais restrita para evitar explosões na abertura
+          x: (Math.random() - 0.5) * 220,
+          y: (Math.random() - 0.5) * 220,
           vx: 0,
           vy: 0,
           degree: deg,
@@ -575,7 +580,7 @@ export default function KnowledgeGraph() {
       nodesRef.current = nextNodes;
       edgesRef.current = prunedEdges;
       setGraphStats({ nodes: nextNodes.length, edges: prunedEdges.length });
-      alphaRef.current = 1; // Dispara a simulação
+      alphaRef.current = 0.6; // Simulação inicial menos agressiva
 
       requestAnimationFrame(() => {
         resizeCanvas();
@@ -867,52 +872,56 @@ export default function KnowledgeGraph() {
     <AppLayout>
       <div className="flex flex-col" style={{ height: "calc(100vh - 3.5rem)" }}>
         <div className="relative flex flex-col flex-1">
-          <button
-            type="button"
-            onClick={() => setOptionsOpen(true)}
-            className="absolute right-4 top-4 z-30 hidden h-10 w-10 items-center justify-center rounded-md bg-white/5 text-white shadow-lg shadow-black/20 transition hover:bg-white/10 sm:grid"
-            aria-label="Open graph options"
-          >
-            <Settings className="h-5 w-5" />
-          </button>
-
-          <div className="absolute right-4 top-16 z-30 flex flex-col items-end gap-2">
-            <div className="flex flex-col items-center gap-0.5">
-              <button
-                type="button"
-                onClick={() => handleZoom(1)}
-                className="grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-black/80 text-white transition hover:bg-white/10"
-                aria-label="Zoom in"
-              >
-                <ZoomIn className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                onClick={() => handleZoom(-1)}
-                className="grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-black/80 text-white transition hover:bg-white/10"
-                aria-label="Zoom out"
-              >
-                <ZoomOut className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                onClick={() => setFocusMode(f => !f)}
-                className={`grid h-10 w-10 place-items-center rounded-full border bg-black/80 text-white transition ${focusMode ? "border-white/60 bg-white/15" : "border-white/10 hover:bg-white/10"}`}
-                aria-label="Toggle focus mode"
-                title="Focus mode"
-              >
-                {focusMode ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
+          {!empty && (
+            <>
               <button
                 type="button"
                 onClick={() => setOptionsOpen(true)}
-                className="grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-black/80 text-white transition hover:bg-white/10 sm:hidden"
+                className="absolute right-4 top-4 z-30 hidden h-10 w-10 items-center justify-center rounded-md bg-white/5 text-white shadow-lg shadow-black/20 transition hover:bg-white/10 sm:grid"
                 aria-label="Open graph options"
               >
-                <Settings className="h-4 w-4" />
+                <Settings className="h-5 w-5" />
               </button>
-            </div>
-          </div>
+
+              <div className="absolute right-4 top-16 z-30 flex flex-col items-end gap-2">
+                <div className="flex flex-col items-center gap-0.5">
+                  <button
+                    type="button"
+                    onClick={() => handleZoom(1)}
+                    className="grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-black/80 text-white transition hover:bg-white/10"
+                    aria-label="Zoom in"
+                  >
+                    <ZoomIn className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleZoom(-1)}
+                    className="grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-black/80 text-white transition hover:bg-white/10"
+                    aria-label="Zoom out"
+                  >
+                    <ZoomOut className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFocusMode(f => !f)}
+                    className={`grid h-10 w-10 place-items-center rounded-full border bg-black/80 text-white transition ${focusMode ? "border-white/60 bg-white/15" : "border-white/10 hover:bg-white/10"}`}
+                    aria-label="Toggle focus mode"
+                    title="Focus mode"
+                  >
+                    {focusMode ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setOptionsOpen(true)}
+                    className="grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-black/80 text-white transition hover:bg-white/10 sm:hidden"
+                    aria-label="Open graph options"
+                  >
+                    <Settings className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
 
           {optionsOpen && (
             <div className="fixed inset-0 z-50 flex items-start justify-center overflow-auto bg-black/50 px-4 py-6 sm:p-6">

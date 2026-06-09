@@ -12,6 +12,7 @@ import {
 } from "@heroicons/react/24/outline";
 import AppLayout from "@/components/AppLayout";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
@@ -417,14 +418,15 @@ export default function Insights() {
                   >
                     <AdjustmentsHorizontalIcon className="h-3.5 w-3.5" />
                   </button>
-                  <button
+                  <Button
                     onClick={() => load(true)}
                     disabled={refreshing}
-                    className="flex items-center gap-2 h-9 border border-white/15 bg-transparent hover:border-white/40 text-white/80 hover:text-white px-4 rounded-sm text-sm font-medium transition-colors disabled:opacity-40"
+                    size="sm"
+                    className="gap-2"
                   >
                     <ArrowPathIcon className={cn("h-3.5 w-3.5", refreshing && "animate-spin")} />
                     Refresh
-                  </button>
+                  </Button>
                 </div>
               </div>
             </header>

@@ -160,7 +160,7 @@ export function SessionNavBar() {
             />
             <motion.span
               variants={labelVariants}
-              className="truncate text-sm font-semibold tracking-tight text-sidebar-accent-foreground"
+              className="truncate text-sm font-serif tracking-tight text-sidebar-accent-foreground"
             >
               {!isCollapsed && "Continuum"}
             </motion.span>

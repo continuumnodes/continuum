@@ -474,7 +474,7 @@ export default function Notes() {
                     </Button>
                   )}
                   <Button onClick={handleCreate} className="gap-2" disabled={creating}>
-                    <Plus className="h-3.5 w-3.5" /> {creating ? "Creating..." : "New entry"}
+                    <Plus className="h-3.5 w-3.5" /> {creating ? "Creating..." : "New note"}
                   </Button>
                 </div>
 

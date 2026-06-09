@@ -7,6 +7,8 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import AppLayout from "@/components/AppLayout";
 import { dashboardApi, graphApi, metricsApi, notesApi, vaultApi, insightsApi } from "@/lib/api";
 import { usePlanGate } from "@/hooks/usePlanGate";
+import { useCreateNote } from "@/hooks/useCreateNote";
+import UpgradeModal from "@/components/UpgradeModal";
 import { getPlanLimits, isUnlimited } from "@/lib/plan";
 import { Progress } from "@/components/ui/progress";
 import { ChartContainer } from "@/components/ui/chart";
@@ -33,7 +35,9 @@ import {
   Clock,
   TrendingUp,
   StickyNote,
-  RefreshCw
+  RefreshCw,
+  Plus,
+  Loader2
 } from "@/lib/heroicons";
 
 // --- TYPES & HELPERS ---
@@ -308,6 +312,8 @@ export default function Dashboard() {
   const limits = getPlanLimits(user);
   const [exporting, setExporting] = useState(false);
   const [timeRange, setTimeRange] = useState<TimeRange>("14d");
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
+  const { createNote, creating } = useCreateNote({ onLimitReached: () => setUpgradeOpen(true) });
 
   // Insights State
   const [insightsLoading, setInsightsLoading] = useState(true);
@@ -570,7 +576,17 @@ export default function Dashboard() {
               Here's what's happening across your knowledge graph.
             </p>
           </div>
+          <button
+            type="button"
+            onClick={() => void createNote()}
+            disabled={creating}
+            className="group inline-flex shrink-0 items-center justify-center gap-2 rounded-sm border border-white/15 bg-white/[0.03] px-4 py-2.5 text-sm font-medium text-white transition-colors hover:border-white/40 hover:bg-white/[0.06] disabled:opacity-50 self-start sm:self-auto"
+          >
+            {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+            {creating ? "Creating…" : "New note"}
+          </button>
         </header>
+
 
         {/* CONTADORES / CARDS KPI */}
         <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
@@ -928,6 +944,8 @@ export default function Dashboard() {
 
         </section>
       </div>
+      <UpgradeModal open={upgradeOpen} onOpenChange={setUpgradeOpen} reason="You've reached the notes limit for your plan." />
     </AppLayout>
+
   );
 }

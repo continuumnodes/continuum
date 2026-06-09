@@ -22,6 +22,8 @@ import {
   X,
   FolderOpen,
   Squares2x2,
+  Plus,
+  Loader2,
 } from "@/lib/heroicons";
 import {
   DropdownMenu,
@@ -65,6 +67,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const [confirmLogoutOpen, setConfirmLogoutOpen] = useState(false);
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const { createNote, creating } = useCreateNote({ onLimitReached: () => setUpgradeOpen(true) });
+  const isEditorPage = /^\/notes\/.+/.test(location.pathname);
 
   // Keyboard shortcut: ⌘/Ctrl + Shift + N to create a note from anywhere.
   useEffect(() => {
@@ -99,7 +102,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       <div className="fixed left-0 right-0 top-0 z-40 flex items-center gap-3 border-b border-border bg-background/80 px-4 py-3 backdrop-blur-xl lg:hidden">
         <div className="flex items-center gap-2">
           <img src="/favicon.ico" alt="Continuum" className="h-7 w-7 rounded-lg object-contain" />
-          <span className="text-base font-serif tracking-tight">Continuum</span>
+          <span className="text-base font-semibold tracking-tight">Continuum</span>
         </div>
 
         <div className="flex-1" />
@@ -168,7 +171,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                   <span className="grid h-8 w-12 place-items-center rounded-lg">
                     <Menu className="h-5 w-5" />
                   </span>
-                  <span className="leading-none">{t("More")}</span>
+                  <span className="leading-none">{t("nav_more")}</span>
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent side="top" align="end" className="mb-2 w-56">
@@ -196,6 +199,27 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             </DropdownMenu>
           </div>
         </nav>
+      )}
+
+      {/* Global quick-create note button */}
+      {!isEditorPage && (
+        <button
+          type="button"
+          onClick={() => void createNote()}
+          disabled={creating}
+          aria-label={t("notes_new") || "New note"}
+          title={t("notes_new") || "New note"}
+          className={cn(
+            "fixed right-4 z-50 grid place-items-center rounded-full bg-primary text-primary-foreground shadow-lg transition-transform active:scale-90 hover:brightness-110 disabled:opacity-70",
+            "h-14 w-14",
+            // Sit above the mobile bottom nav, normal corner on desktop
+            isGraphPage
+              ? "bottom-4"
+              : "bottom-[calc(4.75rem+env(safe-area-inset-bottom))] lg:bottom-6",
+          )}
+        >
+          {creating ? <Loader2 className="h-6 w-6 animate-spin" /> : <Plus className="h-6 w-6" />}
+        </button>
       )}
 
       <UpgradeModal

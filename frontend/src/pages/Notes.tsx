@@ -20,6 +20,8 @@ import {
   ChevronDown,
   ChevronRight,
   SlidersHorizontal,
+  Check,
+  X,
 } from "@/lib/heroicons";
 import { InsightSignalBadge } from "@/components/InsightSignal";
 
@@ -138,6 +140,12 @@ export default function Notes() {
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
 
+  // Multiselect
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+
   // Estados de Ordenação Dinâmica
   const [sortBy, setSortBy] = useState<"createdAt" | "updatedAt">("updatedAt");
   const [sortOrder, setSortOrder] = useState<"desc" | "asc">("desc");
@@ -216,6 +224,42 @@ export default function Notes() {
       setPendingDelete(null);
     }
   };
+
+  /* Multiselect */
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const exitSelectMode = () => {
+    setSelectMode(false);
+    setSelectedIds(new Set());
+  };
+
+  const confirmBulkDelete = async () => {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+    setBulkDeleting(true);
+    try {
+      await Promise.all(ids.map((id) => notesApi.delete(id)));
+      setNotes((prev) => prev.filter((n) => !selectedIds.has(n.id)));
+      applyUsageDelta({ notesCount: -ids.length });
+      void refresh();
+      toast({ title: `${ids.length} ${ids.length === 1 ? "entry" : "entries"} removed` });
+      exitSelectMode();
+    } catch {
+      toast({ title: "Error deleting entries", variant: "destructive" });
+    } finally {
+      setBulkDeleting(false);
+      setBulkDeleteOpen(false);
+    }
+  };
+
+
 
   /* Filter + group */
   const counts = useMemo(() => {
@@ -418,10 +462,26 @@ export default function Notes() {
                   >
                     <SlidersHorizontal className="h-3.5 w-3.5" />
                   </button>
+                  {selectMode ? (
+                    <button
+                      onClick={exitSelectMode}
+                      className="inline-flex h-9 items-center gap-1.5 rounded-sm border border-white/15 px-3 text-sm text-white/80 transition-colors hover:border-white/40 hover:text-white"
+                    >
+                      <X className="h-3.5 w-3.5" /> Done
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => setSelectMode(true)}
+                      className="inline-flex h-9 items-center gap-1.5 rounded-sm border border-white/15 px-3 text-sm text-white/80 transition-colors hover:border-white/40 hover:text-white"
+                    >
+                      <Check className="h-3.5 w-3.5" /> Select
+                    </button>
+                  )}
                   <Button onClick={handleCreate} className="gap-2" disabled={creating}>
                     <Plus className="h-3.5 w-3.5" /> {creating ? "Creating..." : "New entry"}
                   </Button>
                 </div>
+
               </div>
               {limitMsg && <p className="mt-3 text-xs text-white/40">{limitMsg}</p>}
             </header>
@@ -467,7 +527,36 @@ export default function Notes() {
               </div>
             </div>
 
+            {/* Selection action bar */}
+            {selectMode && (
+              <div className="sticky top-[7.5rem] z-20 mb-6 flex flex-wrap items-center justify-between gap-3 rounded-sm border border-white/15 bg-black/80 px-3 py-2.5 backdrop-blur-xl">
+                <span className="text-sm text-white/70">
+                  {selectedIds.size} selected
+                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => {
+                      const allIds = filtered.map((n) => n.id);
+                      const allSelected = allIds.every((id) => selectedIds.has(id));
+                      setSelectedIds(allSelected ? new Set() : new Set(allIds));
+                    }}
+                    className="rounded-sm border border-white/15 px-3 py-1.5 text-xs text-white/70 transition-colors hover:border-white/40 hover:text-white"
+                  >
+                    {filtered.length > 0 && filtered.every((n) => selectedIds.has(n.id)) ? "Clear all" : "Select all"}
+                  </button>
+                  <button
+                    onClick={() => setBulkDeleteOpen(true)}
+                    disabled={selectedIds.size === 0}
+                    className="inline-flex items-center gap-1.5 rounded-sm border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-xs text-red-300 transition-colors hover:bg-red-500/20 disabled:opacity-40"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" /> Delete
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Content */}
+
             {loading ? (
               <div className="flex justify-center py-24">
                 <Loader2 className="h-5 w-5 animate-spin text-white/30" />
@@ -511,16 +600,32 @@ export default function Notes() {
                             const preview = extractPreview(note.content);
                             const targetDate = sortBy === "createdAt" ? note.createdAt : note.updatedAt;
 
+                            const selected = selectedIds.has(note.id);
                             return (
                               <li key={note.id}>
                                 <button
-                                  onClick={() => navigate(`/notes/${note.id}`)}
-                                  className="group relative flex w-full items-start gap-4 py-5 text-left transition-colors hover:bg-white/[0.02]"
+                                  onClick={() => selectMode ? toggleSelect(note.id) : navigate(`/notes/${note.id}`)}
+                                  className={cn(
+                                    "group relative flex w-full items-start gap-4 py-5 text-left transition-colors hover:bg-white/[0.02]",
+                                    selected && "bg-white/[0.04]"
+                                  )}
                                 >
                                   <span
                                     aria-hidden
                                     className="absolute left-0 top-1/2 h-8 w-px -translate-x-3 -translate-y-1/2 bg-white opacity-0 transition-opacity group-hover:opacity-100"
                                   />
+
+                                  {selectMode && (
+                                    <span
+                                      className={cn(
+                                        "mt-1 grid h-5 w-5 shrink-0 place-items-center rounded-sm border transition-colors",
+                                        selected ? "border-white bg-white text-black" : "border-white/30 text-transparent"
+                                      )}
+                                    >
+                                      <Check className="h-3.5 w-3.5" />
+                                    </span>
+                                  )}
+
 
                                   <div className="hidden w-20 shrink-0 pt-1 sm:block">
                                     <p className="font-mono text-[10px] uppercase tracking-wider text-white/30">
@@ -547,7 +652,9 @@ export default function Notes() {
                                   </div>
 
 
+                                  {!selectMode && (
                                   <div className="flex shrink-0 items-center gap-1 pt-1">
+
                                     <span
                                       role="button"
                                       tabIndex={0}
@@ -586,7 +693,9 @@ export default function Notes() {
                                       <Trash2 className="h-3.5 w-3.5" />
                                     </span>
                                   </div>
+                                  )}
                                 </button>
+
                               </li>
                             );
                           })}
@@ -614,6 +723,15 @@ export default function Notes() {
         confirmText="Remove"
         destructive
         onConfirm={confirmDelete}
+      />
+      <ConfirmDialog
+        open={bulkDeleteOpen}
+        onOpenChange={(open) => !open && !bulkDeleting && setBulkDeleteOpen(false)}
+        title={`Remove ${selectedIds.size} ${selectedIds.size === 1 ? "entry" : "entries"}?`}
+        description="The selected entries will be permanently removed from your archive."
+        confirmText={bulkDeleting ? "Removing…" : "Remove"}
+        destructive
+        onConfirm={confirmBulkDelete}
       />
     </AppLayout>
   );

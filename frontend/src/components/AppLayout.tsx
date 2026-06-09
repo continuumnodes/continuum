@@ -1,11 +1,9 @@
-import { ReactNode, useEffect, useState } from "react";
+import { ReactNode, useState } from "react";
 import { CommandPalette } from "@/components/CommandPalette";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { useCreateNote } from "@/hooks/useCreateNote";
-import UpgradeModal from "@/components/UpgradeModal";
 import {
   LayoutDashboard,
   StickyNote,
@@ -22,8 +20,7 @@ import {
   X,
   FolderOpen,
   Squares2x2,
-  Plus,
-  Loader2,
+  ArrowLeft,
 } from "@/lib/heroicons";
 import {
   DropdownMenu,
@@ -65,21 +62,6 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const isGraphPage = location.pathname.startsWith("/graph");
   
   const [confirmLogoutOpen, setConfirmLogoutOpen] = useState(false);
-  const [upgradeOpen, setUpgradeOpen] = useState(false);
-  const { createNote, creating } = useCreateNote({ onLimitReached: () => setUpgradeOpen(true) });
-  const isEditorPage = /^\/notes\/.+/.test(location.pathname);
-
-  // Keyboard shortcut: ⌘/Ctrl + Shift + N to create a note from anywhere.
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === "n") {
-        e.preventDefault();
-        void createNote();
-      }
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [createNote]);
 
 
   const handleLogout = async () => {
@@ -106,6 +88,17 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         </div>
 
         <div className="flex-1" />
+
+        {isGraphPage && (
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-white/80 transition hover:bg-white/10 hover:text-white"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            {t("common_back") || "Back"}
+          </button>
+        )}
       </div>
 
       <ConfirmDialog
@@ -171,7 +164,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                   <span className="grid h-8 w-12 place-items-center rounded-lg">
                     <Menu className="h-5 w-5" />
                   </span>
-                  <span className="leading-none">{t("nav_more")}</span>
+                  <span className="leading-none">{t("More")}</span>
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent side="top" align="end" className="mb-2 w-56">
@@ -201,32 +194,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         </nav>
       )}
 
-      {/* Global quick-create note button */}
-      {!isEditorPage && (
-        <button
-          type="button"
-          onClick={() => void createNote()}
-          disabled={creating}
-          aria-label={t("notes_new") || "New note"}
-          title={t("notes_new") || "New note"}
-          className={cn(
-            "fixed right-4 z-50 grid place-items-center rounded-full bg-primary text-primary-foreground shadow-lg transition-transform active:scale-90 hover:brightness-110 disabled:opacity-70",
-            "h-14 w-14",
-            // Sit above the mobile bottom nav, normal corner on desktop
-            isGraphPage
-              ? "bottom-4"
-              : "bottom-[calc(4.75rem+env(safe-area-inset-bottom))] lg:bottom-6",
-          )}
-        >
-          {creating ? <Loader2 className="h-6 w-6 animate-spin" /> : <Plus className="h-6 w-6" />}
-        </button>
-      )}
 
-      <UpgradeModal
-        open={upgradeOpen}
-        onOpenChange={setUpgradeOpen}
-        reason="You've reached the notes limit for your plan."
-      />
     </div>
   );
 }

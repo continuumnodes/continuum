@@ -10,6 +10,7 @@ import { usePlanGate } from "@/hooks/usePlanGate";
 import { useCreateNote } from "@/hooks/useCreateNote";
 import UpgradeModal from "@/components/UpgradeModal";
 import { getPlanLimits, isUnlimited } from "@/lib/plan";
+import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { ChartContainer } from "@/components/ui/chart";
 import { Badge } from "@/components/ui/badge";
@@ -576,15 +577,10 @@ export default function Dashboard() {
               Here's what's happening across your knowledge graph.
             </p>
           </div>
-          <button
-            type="button"
-            onClick={() => void createNote()}
-            disabled={creating}
-            className="group inline-flex shrink-0 items-center justify-center gap-2 rounded-sm border border-white/15 bg-white/[0.03] px-4 py-2.5 text-sm font-medium text-white transition-colors hover:border-white/40 hover:bg-white/[0.06] disabled:opacity-50 self-start sm:self-auto"
-          >
+          <Button onClick={() => void createNote()} disabled={creating} className="gap-2 self-start sm:self-auto">
             {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
             {creating ? "Creating…" : "New note"}
-          </button>
+          </Button>
         </header>
 
 

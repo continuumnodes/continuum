@@ -454,28 +454,24 @@ export default function Notes() {
                   <p className="text-[10px] uppercase tracking-[0.32em] text-white/30">{viewLabel}</p>
                   <h1 className="mt-2 font-serif text-5xl tracking-tight text-white">{t("notes_title")}</h1>
                 </div>
-                <div className="flex shrink-0 items-center gap-2">
-                  <button
+                <div className="flex flex-wrap items-center justify-end gap-2">
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     onClick={() => setFilterDrawerOpen(true)}
-                    className="grid h-9 w-9 place-items-center rounded-sm border border-white/15 text-white/80 transition-colors hover:border-white/40 hover:text-white lg:hidden"
+                    className="lg:hidden h-9 w-9 p-0 text-white/80"
                     aria-label="Open filters"
                   >
-                    <SlidersHorizontal className="h-3.5 w-3.5" />
-                  </button>
+                    <SlidersHorizontal className="h-4 w-4" />
+                  </Button>
                   {selectMode ? (
-                    <button
-                      onClick={exitSelectMode}
-                      className="inline-flex h-9 items-center gap-1.5 rounded-sm border border-white/15 px-3 text-sm text-white/80 transition-colors hover:border-white/40 hover:text-white"
-                    >
+                    <Button size="sm" className="gap-2" onClick={exitSelectMode}>
                       <X className="h-3.5 w-3.5" /> Done
-                    </button>
+                    </Button>
                   ) : (
-                    <button
-                      onClick={() => setSelectMode(true)}
-                      className="inline-flex h-9 items-center gap-1.5 rounded-sm border border-white/15 px-3 text-sm text-white/80 transition-colors hover:border-white/40 hover:text-white"
-                    >
+                    <Button size="sm" className="gap-2" onClick={() => setSelectMode(true)}>
                       <Check className="h-3.5 w-3.5" /> Select
-                    </button>
+                    </Button>
                   )}
                   <Button onClick={handleCreate} className="gap-2" disabled={creating}>
                     <Plus className="h-3.5 w-3.5" /> {creating ? "Creating..." : "New entry"}

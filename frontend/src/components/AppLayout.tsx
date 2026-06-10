@@ -164,7 +164,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                   <span className="grid h-8 w-12 place-items-center rounded-lg">
                     <Menu className="h-5 w-5" />
                   </span>
-                  <span className="leading-none">{t("nav_more")}</span>
+                  <span className="leading-none">{t("More")}</span>
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent side="top" align="end" className="mb-2 w-56">

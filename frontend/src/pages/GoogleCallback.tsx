@@ -63,6 +63,8 @@ export default function GoogleCallback() {
         })
         .then(async ({ data }) => {
           setTokens(data.accessToken, data.refreshToken);
+          // Mark as newly created account for onboarding popup
+          localStorage.setItem('newAccountCreated', 'true');
           await refreshUser();
           navigate("/");
         })

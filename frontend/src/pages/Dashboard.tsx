@@ -9,6 +9,7 @@ import { dashboardApi, graphApi, metricsApi, notesApi, vaultApi, insightsApi } f
 import { usePlanGate } from "@/hooks/usePlanGate";
 import { useCreateNote } from "@/hooks/useCreateNote";
 import UpgradeModal from "@/components/UpgradeModal";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { getPlanLimits, isUnlimited } from "@/lib/plan";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -314,7 +315,17 @@ export default function Dashboard() {
   const [exporting, setExporting] = useState(false);
   const [timeRange, setTimeRange] = useState<TimeRange>("14d");
   const [upgradeOpen, setUpgradeOpen] = useState(false);
+  const [showOnboardingPopup, setShowOnboardingPopup] = useState(false);
   const { createNote, creating } = useCreateNote({ onLimitReached: () => setUpgradeOpen(true) });
+
+  // Check for new account onboarding popup
+  useEffect(() => {
+    const isNewAccount = localStorage.getItem('newAccountCreated') === 'true';
+    if (isNewAccount) {
+      setShowOnboardingPopup(true);
+      localStorage.removeItem('newAccountCreated');
+    }
+  }, []);
 
   // Insights State
   const [insightsLoading, setInsightsLoading] = useState(true);
@@ -941,6 +952,51 @@ export default function Dashboard() {
         </section>
       </div>
       <UpgradeModal open={upgradeOpen} onOpenChange={setUpgradeOpen} reason="You've reached the notes limit for your plan." />
+      
+      {/* Onboarding popup after account creation */}
+      <Dialog open={showOnboardingPopup} onOpenChange={setShowOnboardingPopup}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-serif text-2xl">Welcome to Continuum! 🎉</DialogTitle>
+            <DialogDescription className="mt-2">
+              Your knowledge graph is ready to grow.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-foreground/80">
+              Did you know? You can export all your notes and entities as <span className="font-semibold">Markdown</span> anytime. This makes it easy to backup your knowledge or integrate with other tools.
+            </p>
+            <div className="rounded-lg border border-white/10 bg-white/[0.02] p-3">
+              <p className="text-xs text-white/50 mb-2">📥 Export includes:</p>
+              <ul className="text-xs text-white/70 space-y-1">
+                <li>• All your notes in Markdown format</li>
+                <li>• Entity relationships and metadata</li>
+                <li>• Complete knowledge graph backup</li>
+              </ul>
+            </div>
+          </div>
+          <div className="flex gap-3 mt-6">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowOnboardingPopup(false)}
+              className="flex-1"
+            >
+              Got it
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => {
+                setShowOnboardingPopup(false);
+                navigate("/profile");
+              }}
+              className="flex-1"
+            >
+              Explore export →
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </AppLayout>
 
   );

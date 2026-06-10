@@ -372,7 +372,7 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
                         addCustomEntity();
                       }
                     }}
-                    placeholder="e.g. Emilly, Project Phoenix…"
+                    placeholder="e.g. Amanda, Project Continuum..."
                     className="flex-1 min-w-0 bg-transparent border border-white/10 text-sm text-white/90 focus:border-white/40 focus:outline-none rounded-sm px-3 py-2"
                   />
                   <select

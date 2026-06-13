@@ -1,5 +1,5 @@
 import { Extension } from "@tiptap/core";
-import { Plugin, PluginKey } from "@tiptap/pm/state";
+import { Plugin, PluginKey, TextSelection } from "@tiptap/pm/state";
 
 const PAIRS: Record<string, string> = {
   "(": ")",
@@ -46,14 +46,14 @@ export const AutoPair = Extension.create({
               // skip over if the same closer is the next char (e.g. typing ) inside ())
               if (text === close && after === close) {
                 const tr = state.tr.setSelection(
-                  state.selection.constructor.near(state.doc.resolve(to + 1))
+                  TextSelection.near(state.doc.resolve(to + 1))
                 );
                 view.dispatch(tr);
                 return true;
               }
               const tr = state.tr.insertText(text + close, from, to);
               const newPos = from + 1;
-              tr.setSelection(state.selection.constructor.near(tr.doc.resolve(newPos)));
+              tr.setSelection(TextSelection.near(tr.doc.resolve(newPos)));
               view.dispatch(tr);
               return true;
             }

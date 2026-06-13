@@ -44,8 +44,7 @@ export const EditorShortcuts = Extension.create<ShortcutOptions>({
         return true;
       },
       "Alt-ArrowUp": () => {
-        // @ts-expect-error commands from prosemirror
-        return this.editor.commands.first(({ commands }) => [
+        return (this.editor.commands as any).first(({ commands }: any) => [
           () => commands.liftListItem?.("listItem"),
           () => commands.liftListItem?.("taskItem"),
         ]) || moveBlock(this.editor, -1);

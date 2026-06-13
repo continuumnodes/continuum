@@ -133,6 +133,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const register = async (username: string, email: string, password: string) => {
     const { data } = await authApi.register(username, email, password);
     if (data?.accessToken || data?.token) {
+      // Registration always creates a new account -> show onboarding popup
+      localStorage.setItem('newAccountCreated', 'true');
       setTokens(data.accessToken ?? data.token, data.refreshToken ?? "");
       await fetchUser();
     }

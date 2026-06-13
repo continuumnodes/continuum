@@ -25,6 +25,7 @@ const translations = {
     nav_subscription: "Subscription",
     nav_logout: "Logout",
     nav_settings: "Settings",
+    nav_more: "More",
     // Common
     common_save: "Save",
     common_cancel: "Cancel",
@@ -131,6 +132,8 @@ const translations = {
     nav_subscription: "Suscripción",
     nav_logout: "Cerrar sesión",
     nav_settings: "Ajustes",
+    nav_more: "Más",
+
     common_save: "Guardar",
     common_cancel: "Cancelar",
     common_delete: "Eliminar",
@@ -226,6 +229,8 @@ const translations = {
     nav_subscription: "Assinatura",
     nav_logout: "Sair",
     nav_settings: "Ajustes",
+    nav_more: "Mais",
+
     common_save: "Salvar",
     common_cancel: "Cancelar",
     common_delete: "Excluir",
@@ -321,6 +326,7 @@ const translations = {
     nav_subscription: "Abonnement",
     nav_logout: "Déconnexion",
     nav_settings: "Paramètres",
+    nav_more: "Plus",
     common_save: "Enregistrer",
     common_cancel: "Annuler",
     common_delete: "Supprimer",

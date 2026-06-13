@@ -377,19 +377,20 @@ export default function Dashboard() {
     setExporting(true);
     try {
       const { authApi } = await import("@/lib/api");
-      const res = await authApi.exportData();
-      const json = typeof res.data === "string" ? res.data : JSON.stringify(res.data, null, 2);
-      const blob = new Blob([json], { type: "application/json" });
+      const res = await authApi.exportVaultZip();
+      const blob = res.data instanceof Blob ? res.data : new Blob([res.data], { type: "application/zip" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "continuum-backup.json";
+      a.download = "continuum-vault.zip";
       document.body.appendChild(a);
       a.click();
       a.remove();
       URL.revokeObjectURL(url);
+      toast({ title: "Export ready", description: "Your full vault was downloaded as a .zip." });
     } catch (e) {
       console.error("Export failed", e);
+      toast({ title: "Export failed", description: "Please try again.", variant: "destructive" });
     } finally {
       setExporting(false);
     }
@@ -964,14 +965,14 @@ export default function Dashboard() {
           </DialogHeader>
           <div className="space-y-4">
             <p className="text-sm text-foreground/80">
-              Did you know? You can export all your notes and entities as <span className="font-semibold">Markdown</span> anytime. This makes it easy to backup your knowledge or integrate with other tools.
+              Did you know? You can import your existing notes as <span className="font-semibold">Markdown</span> files. Bring your knowledge from other tools and start building your graph right away.
             </p>
             <div className="rounded-lg border border-white/10 bg-white/[0.02] p-3">
-              <p className="text-xs text-white/50 mb-2">📥 Export includes:</p>
+              <p className="text-xs text-white/50 mb-2">📥 Import supports:</p>
               <ul className="text-xs text-white/70 space-y-1">
-                <li>• All your notes in Markdown format</li>
-                <li>• Entity relationships and metadata</li>
-                <li>• Complete knowledge graph backup</li>
+                <li>• Your notes in Markdown (.md) format</li>
+                <li>• Automatic entity detection from mentions</li>
+                <li>• Folder structure from your files</li>
               </ul>
             </div>
           </div>
@@ -988,11 +989,11 @@ export default function Dashboard() {
               size="sm"
               onClick={() => {
                 setShowOnboardingPopup(false);
-                navigate("/profile");
+                navigate("/notes");
               }}
               className="flex-1"
             >
-              Explore export →
+              Import notes →
             </Button>
           </div>
         </DialogContent>

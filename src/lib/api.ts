@@ -184,6 +184,19 @@ class RefreshTokenManager {
   private async doRefresh(): Promise<string | null> {
     const refreshToken = getRefreshToken();
 
+    // Sem refresh token não há como renovar a sessão. Evita uma chamada
+    // que o backend rejeitaria com 400 (refreshToken @NotBlank) e desloga
+    // o usuário de forma limpa.
+    if (!refreshToken) {
+      console.warn("[RefreshTokenManager] Nenhum refresh token disponível, encerrando sessão");
+      this.rejectQueue(new Error("missing_refresh_token"));
+      clearAuthTokens();
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("auth:logout"));
+      }
+      return null;
+    }
+
     try {
       console.log("[RefreshTokenManager] Iniciando refresh de token");
 
@@ -196,13 +209,14 @@ class RefreshTokenManager {
         expiresIn?: number;
       }>(
         `${API_BASE_URL}/api/auth/refresh`,
-        refreshToken ? { refreshToken } : {},
+        { refreshToken },
         {
           timeout: 5000,
           withCredentials: true,
           headers: { "Content-Type": "application/json" },
         }
       );
+
 
       if (data.accessToken) {
         console.log("[RefreshTokenManager] Token renovado com sucesso");
@@ -345,6 +359,7 @@ export const authApi = {
   resendVerification: (email: string) =>
     api.post("/api/auth/resend-verification", { email }),
   exportData: () => api.get("/api/account/export"),
+  exportVaultZip: () => api.get("/api/account/export/zip", { responseType: "blob" }),
 };
 
 // --- RESTANTE DOS ENDPOINTS (Notes, Folders, etc) ---

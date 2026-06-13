@@ -42,7 +42,7 @@ export function usePlanGate(): PlanGateResult {
     const map = {
       notes: { current: usage?.notesCount ?? 0, max: limits.maxNotes, label: t("notes") },
       entities: { current: usage?.entitiesCount ?? 0, max: limits.maxEntities, label: t("entities") },
-      activities: { current: usage?.activitiesCount ?? 0, max: limits.maxActivities, label: t("activities") },
+      activities: { current: usage?.activitiesCount ?? 0, max: limits.maxEntities, label: t("activities") },
       vault: { current: usage?.vaultSizeMB ?? 0, max: limits.maxVaultSizeMB, label: t("vault") },
     };
     const r = map[resource];

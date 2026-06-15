@@ -208,7 +208,7 @@ export default function Profile() {
                 <div className="min-w-0 flex-1">
                   <p className="text-xs font-medium text-white/70">Import Markdown</p>
                   <p className="text-xs text-white/30 mt-0.5">
-                    Bring notes from Obsidian, Logseq, or any folder of .md files. Entities are detected automatically — you confirm.
+                    Bring notes from any folder of .md files. Entities are detected automatically — you confirm.
                   </p>
                 </div>
               </div>

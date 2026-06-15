@@ -989,7 +989,7 @@ export default function Dashboard() {
               size="sm"
               onClick={() => {
                 setShowOnboardingPopup(false);
-                navigate("/notes");
+                navigate("/profile");
               }}
               className="flex-1"
             >

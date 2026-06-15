@@ -6,7 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { importApi } from "@/lib/api";
 import { ArrowPathIcon, ArrowUpTrayIcon, CheckCircleIcon, DocumentTextIcon } from "@heroicons/react/24/outline";
 
-type Step = "upload" | "review" | "result";
+type Step = "upload" | "review" | "confirm" | "result";
 type EntityType = "PERSON" | "PROJECT" | "TOPIC" | "ORGANIZATION" | "ACTIVITY";
 
 interface PreviewFile {
@@ -148,8 +148,6 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
         const initial: Record<string, { accept: boolean; type: EntityType; name: string }> = {};
         for (const c of data.candidates) {
           initial[c.key] = {
-            // Auto-accept anything the AI or wiki-links/frontmatter surfaced.
-            // LOW = pure capitalisation heuristic → user opts in manually.
             accept: (c.confidence === "HIGH" || c.confidence === "MEDIUM") && !c.existing,
             type: c.suggestedType,
             name: c.name,
@@ -175,6 +173,7 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
     if (!preview) return;
     setBusy(true);
     setProgress(20);
+    setStep("result"); // optimistically move; errors will still render
     try {
       const payload = {
         files: preview.files.map((f) => ({
@@ -198,9 +197,9 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
       const res = await importApi.commitMarkdown(payload);
       setResult(res.data as CommitResponse);
       setProgress(100);
-      setStep("result");
       onImported?.();
     } catch (e: any) {
+      setStep("review"); // roll back on error
       toast({
         title: "Import failed",
         description: e?.response?.data?.message || e?.message || "Could not commit import",
@@ -263,6 +262,8 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
         </DialogHeader>
 
         <div className="p-4 sm:p-6 flex-1 overflow-y-auto">
+
+          {/* ── Step: upload ── */}
           {step === "upload" && (
             <div className="space-y-4">
               <div
@@ -328,6 +329,7 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
             </div>
           )}
 
+          {/* ── Step: review ── */}
           {step === "review" && preview && (
             <div className="space-y-6">
               <div className="grid grid-cols-3 gap-2 sm:gap-3">
@@ -518,17 +520,67 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
                 </Button>
                 <Button
                   size="sm"
-                  onClick={handleCommit}
+                  onClick={() => setStep("confirm")}
                   disabled={busy}
                   className="bg-white text-black hover:bg-white/90 w-full sm:w-auto"
                 >
-                  {busy && <ArrowPathIcon className="w-3.5 h-3.5 mr-2 animate-spin" />}
                   Import {preview.files.length} {preview.files.length === 1 ? "file" : "files"}
                 </Button>
               </div>
             </div>
           )}
 
+          {/* ── Step: confirm ── */}
+          {step === "confirm" && preview && (
+            <div className="flex flex-col justify-between h-full min-h-[260px] space-y-6">
+              <div className="space-y-5">
+                <div className="border-l-2 border-white/20 pl-4">
+                  <p className="font-serif text-lg text-white leading-snug">
+                    Ready to import?
+                  </p>
+                  <p className="text-xs text-white/50 mt-1 leading-relaxed">
+                    This will add notes and create entities in your knowledge graph. The action cannot be undone.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 sm:gap-3 sm:grid-cols-4">
+                  <Stat label="Files" value={preview.files.length} />
+                  <Stat label="Entities" value={acceptedCount + customEntities.length} />
+                  <Stat label="Custom" value={customEntities.length} />
+                  <Stat label="Skipped" value={preview.skipped?.length ?? 0} />
+                </div>
+
+                {(acceptedCount + customEntities.length) === 0 && (
+                  <p className="text-[11px] text-white/40 border border-white/10 rounded-sm px-3 py-2">
+                    No entities selected — only notes will be imported.
+                  </p>
+                )}
+              </div>
+
+              <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-2 sticky bottom-0 bg-black/95 -mx-4 sm:mx-0 px-4 sm:px-0 pb-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setStep("review")}
+                  disabled={busy}
+                  className="text-white/60 hover:text-white w-full sm:w-auto"
+                >
+                  Go back
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={handleCommit}
+                  disabled={busy}
+                  className="bg-white text-black hover:bg-white/90 w-full sm:w-auto"
+                >
+                  {busy && <ArrowPathIcon className="w-3.5 h-3.5 mr-2 animate-spin" />}
+                  Confirm import
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* ── Step: result ── */}
           {step === "result" && result && (
             <div className="space-y-6">
               <div className="flex items-center gap-3">
@@ -565,6 +617,7 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
               </div>
             </div>
           )}
+
         </div>
       </DialogContent>
     </Dialog>

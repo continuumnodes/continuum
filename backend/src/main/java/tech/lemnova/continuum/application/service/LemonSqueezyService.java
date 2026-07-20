@@ -7,7 +7,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -31,11 +30,11 @@ public class LemonSqueezyService {
     private final String variantVision;
 
     public LemonSqueezyService(
-            @Value("${lemonsqueezy.api.key}") String apiKey,
-            @Value("${lemonsqueezy.store.id}") String storeId,
-            @Value("${lemonsqueezy.checkout.success.url}") String successUrl,
-            @Value("${lemonsqueezy.checkout.cancel.url}") String cancelUrl,
-            @Value("${lemonsqueezy.variant.vision}") String variantVision) {
+            @Value("${lemonsqueezy.api.key:}") String apiKey,
+            @Value("${lemonsqueezy.store.id:}") String storeId,
+            @Value("${lemonsqueezy.checkout.success.url:}") String successUrl,
+            @Value("${lemonsqueezy.checkout.cancel.url:}") String cancelUrl,
+            @Value("${lemonsqueezy.variant.vision:}") String variantVision) {
         this.apiKey = apiKey;
         this.storeId = storeId;
         this.successUrl = successUrl;
@@ -45,6 +44,10 @@ public class LemonSqueezyService {
     }
 
     public CheckoutResponse createCheckout(String userId, String email, String priceOrPlan) {
+        throw new BadRequestException("Lemon Squeezy checkout is disabled");
+    }
+
+    private CheckoutResponse createCheckoutInternal(String userId, String email, String priceOrPlan) {
         String variantId = resolveVariantId(priceOrPlan);
         if (variantId == null || variantId.isBlank()) {
             throw new BadRequestException("Invalid Lemon Squeezy plan or variant: " + priceOrPlan);

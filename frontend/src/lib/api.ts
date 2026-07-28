@@ -1,5 +1,6 @@
 import axios from "axios";
 import { parseTiptapContent } from "@/lib/tiptap-content";
+import { installOfflineLayer } from "@/lib/offline/axios-offline";
 
 // Lê em tempo de execução, não de build
 const getAPIBaseURL = () => {
@@ -122,6 +123,9 @@ api.interceptors.request.use((config) => {
   }
   return config;
 });
+
+// Install offline-first layer AFTER auth interceptor so auth headers are attached
+installOfflineLayer(api);
 
 /**
  * Gerenciador de Refresh Token com fila de requisições

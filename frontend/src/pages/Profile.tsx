@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AppLayout from "@/components/AppLayout";
+import InstallAppButton from "@/components/pwa/InstallAppButton";
 import { useAuth } from "@/contexts/AuthContext";
 import { authApi } from "@/lib/api";
 import { version } from "@/lib/version";
@@ -283,6 +284,10 @@ export default function Profile() {
               >
                 {t("profile_importMdBtn")}
               </button>
+            </div>
+
+            <div className="border border-white/5 bg-white/[0.01] p-5 rounded-sm">
+              <InstallAppButton />
             </div>
           </div>
 

@@ -1,22 +1,20 @@
-import { Children, ComponentType, ReactNode, useEffect, useMemo, useState } from "react";
+import { ComponentType, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import AppLayout from "@/components/AppLayout";
-import { dashboardApi, graphApi, metricsApi, notesApi, vaultApi, insightsApi } from "@/lib/api";
-import { usePlanGate } from "@/hooks/usePlanGate";
+import { SummaryMetric, SummaryMetricRow } from "@/components/ui/summary-metric";
+import { FloatingCreateButton } from "@/components/ui/floating-create-button";
+import { TodayHabitsCard } from "@/components/dashboard/TodayHabitsCard";
+
+import { dashboardApi, graphApi, metricsApi, notesApi } from "@/lib/api";
 import { useCreateNote } from "@/hooks/useCreateNote";
 import UpgradeModal from "@/components/UpgradeModal";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { getPlanLimits, isUnlimited } from "@/lib/plan";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
+import { Card, CardContent } from "@/components/ui/card";
 import { ChartContainer } from "@/components/ui/chart";
-import { Badge } from "@/components/ui/badge";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import {
   AreaChart,
@@ -26,47 +24,9 @@ import {
   Tooltip,
   CartesianGrid,
 } from "recharts";
-import {
-  ArrowRight,
-  HardDrive,
-  Network,
-  FileText,
-  Tag,
-  Flame,
-  Users,
-  Clock,
-  TrendingUp,
-  StickyNote,
-  RefreshCw,
-  Plus,
-  Loader2
-} from "@/lib/heroicons";
+import { ArrowRight, RefreshCw, Plus } from "@/lib/heroicons";
 
 // --- TYPES & HELPERS ---
-interface NoteInsight {
-  note: { id: string; title: string; type?: string; entityIds?: string[]; updatedAt?: string; };
-  score: number;
-  badge: string;
-  mentionCount: number;
-  recentMentions: number;
-  hoursTracked: number;
-  entityConnections: number;
-  uniqueDaysReferenced: number;
-  daysSinceLastInteraction: number;
-}
-
-interface EntityInsight {
-  entity: { id: string; title: string; type?: string; };
-  score: number;
-  badge: string;
-  mentionCount: number;
-  recentMentions: number;
-  hoursTracked: number;
-  relationsCount: number;
-  uniqueDaysMentioned: number;
-  daysSinceLastMention: number;
-}
-
 const rangeDaysMap = {
   "14d": 14,
   "1mo": 30,
@@ -88,13 +48,6 @@ const formatDays = (d: number, t: (key: string, vars?: Record<string, string | n
   if (d < 30) return t("db_dAgo", { n: d });
   if (d < 365) return t("db_moAgo", { n: Math.round(d / 30) });
   return t("db_yAgo", { n: Math.round(d / 365) });
-};
-
-const badgeStyle = (badge: string) => {
-  const b = badge?.toLowerCase() || "";
-  if (b.includes("hot")) return "bg-white/[0.06] text-white/90 border-white/20";
-  if (b.includes("forgotten") || b.includes("gem")) return "bg-white/[0.04] text-white/70 border-white/10";
-  return "bg-transparent text-white/50 border-white/10";
 };
 
 const formatNoteDate = (timestamp?: number) => {
@@ -133,22 +86,6 @@ function StatCard({ icon: Icon, label, value, hint }: { icon: ComponentType<{ cl
   );
 }
 
-function SummaryMetric({ label, value, delta, comparison }: { label: string; value: string; delta: number; comparison: string }) {
-  const isUp = delta > 0;
-  const isDown = delta < 0;
-  const arrow = isDown ? "↓" : isUp ? "↑" : "–";
-  return (
-    <div className="flex flex-col gap-3 min-w-0">
-      <p className="text-[10px] uppercase tracking-[0.24em] text-white/40 font-mono truncate">{label}</p>
-      <p className="font-serif text-4xl sm:text-5xl text-white leading-none tabular-nums truncate">{value}</p>
-      <div className="inline-flex items-center gap-1.5 self-start rounded-sm border border-white/10 bg-white/[0.03] px-2 py-1 text-[10px] font-mono text-white/50">
-        <span className={cn(isDown && "text-red-300/80", isUp && "text-emerald-300/80")}>{arrow} {Math.abs(delta)}</span>
-        <span className="text-white/30">{comparison}</span>
-      </div>
-    </div>
-  );
-}
-
 function WeeklySummary({ notes, totalNotes, totalEntities, graphNodeCount, currentScore }: {
   notes: any[]; totalNotes: number; totalEntities: number; graphNodeCount: number; currentScore: number;
 }) {
@@ -165,284 +102,32 @@ function WeeklySummary({ notes, totalNotes, totalEntities, graphNodeCount, curre
   const notesDelta = thisWeek - lastWeek;
 
   return (
-    <section className="-mt-4 rounded-sm bg-white/[0.02] p-5 sm:-mt-6 sm:p-8">
-      <div className="flex items-center justify-between mb-6">
-        <p className="text-[10px] uppercase tracking-widest text-white/30 font-mono hidden sm:block">{t("db_last7days")}</p>
-      </div>
-      <div className="grid grid-cols-3 gap-4 sm:gap-8">
-        <SummaryMetric label={t("db_notes")} value={String(totalNotes)} delta={notesDelta} comparison={t("db_vsLastWeek")} />
-        <SummaryMetric label={t("db_entities")} value={String(totalEntities)} delta={0} comparison={t("db_nodes", { n: graphNodeCount })} />
-        <SummaryMetric label={t("db_score")} value={currentScore.toFixed(2)} delta={0} comparison={t("db_gravityIndex")} />
-      </div>
-    </section>
+    <SummaryMetricRow eyebrow={t("db_last7days")} className="-mt-4 sm:-mt-6">
+      <SummaryMetric label={t("db_notes")} value={String(totalNotes)} delta={notesDelta} comparison={t("db_vsLastWeek")} />
+      <SummaryMetric label={t("db_entities")} value={String(totalEntities)} delta={0} comparison={t("db_nodes", { n: graphNodeCount })} />
+      <SummaryMetric label={t("db_score")} value={currentScore.toFixed(2)} delta={0} comparison={t("db_gravityIndex")} />
+    </SummaryMetricRow>
   );
 }
 
 
-function StatChip({ children }: { children: ReactNode }) {
-  return (
-    <span className="inline-flex items-center gap-1 rounded-sm border border-white/5 bg-white/[0.02] px-1.5 py-0.5 font-mono text-[10px] text-white/40">
-      {children}
-    </span>
-  );
-}
 
-function NoteCard({ item, onOpen }: { item: NoteInsight; onOpen: () => void }) {
-  const { t } = useLanguage();
-  return (
-    <motion.button
-      whileHover={{ y: -1 }}
-      whileTap={{ scale: 0.99 }}
-      onClick={onOpen}
-      className={cn(
-        "group relative flex w-full flex-col gap-3 overflow-hidden rounded-lg border border-white/[0.08] bg-card/90 backdrop-blur-xl p-4 text-left shadow-sm",
-        "transition duration-300 hover:border-white/10 hover:bg-white/5",
-      )}
-    >
-      <div className="flex items-center justify-between gap-2">
-        <Badge variant="outline" className={cn("text-[9px] font-medium px-1.5 py-0 shadow-sm", badgeStyle(item.badge))}>
-          {item.badge}
-        </Badge>
-        <span className="font-mono text-[9px] text-white/60">{item.score.toFixed(1)}</span>
-      </div>
-      <div className="flex items-start gap-2 flex-1 min-w-0">
-        <div className="mt-0.5 rounded-lg bg-white/[0.04] p-1 shrink-0">
-          <StickyNote className="h-3.5 w-3.5 text-neutral-400" />
-        </div>
-        <h3 className="line-clamp-2 text-xs sm:text-sm font-medium text-white transition-colors">{item.note.title || t("db_untitled")}</h3>
-      </div>
-      <div className="mt-auto flex flex-wrap gap-1 pt-2">
-        {item.mentionCount > 0 && <StatChip>{item.mentionCount} m</StatChip>}
-        {item.hoursTracked > 0 && <StatChip>{formatHours(item.hoursTracked)}</StatChip>}
-        <StatChip>{formatDays(item.daysSinceLastInteraction, t)}</StatChip>
-      </div>
-    </motion.button>
-  );
-}
-
-function EntityCard({ item, onOpen }: { item: EntityInsight; onOpen: () => void }) {
-  const { t } = useLanguage();
-  return (
-    <motion.button
-      whileHover={{ y: -1 }}
-      whileTap={{ scale: 0.99 }}
-      onClick={onOpen}
-      className={cn(
-        "group relative flex w-full flex-col gap-3 overflow-hidden rounded-lg border border-white/[0.08] bg-card/90 backdrop-blur-xl p-4 text-left shadow-sm",
-        "transition duration-300 hover:border-white/10 hover:bg-white/5",
-      )}
-    >
-      <div className="flex items-center justify-between gap-2">
-        <Badge variant="outline" className={cn("text-[9px] font-medium px-1.5 py-0 shadow-sm", badgeStyle(item.badge))}>
-          {item.badge}
-        </Badge>
-        <span className="font-mono text-[9px] text-white/60">{item.score.toFixed(1)}</span>
-      </div>
-      <div className="flex items-start gap-2 flex-1 min-w-0">
-        <div className="mt-0.5 rounded-lg bg-white/[0.04] p-1 shrink-0">
-          <Network className="h-3.5 w-3.5 text-neutral-400" />
-        </div>
-        <div className="min-w-0">
-          <h3 className="line-clamp-2 text-xs sm:text-sm font-medium text-white transition-colors">{item.entity.title}</h3>
-          {item.entity.type && (
-            <p className="mt-0.5 text-[8px] font-semibold uppercase tracking-wider text-white/50 truncate">{item.entity.type}</p>
-          )}
-        </div>
-      </div>
-      <div className="mt-auto flex flex-wrap gap-1 pt-2">
-        {item.mentionCount > 0 && <StatChip>{item.mentionCount} m</StatChip>}
-        {item.hoursTracked > 0 && <StatChip>{formatHours(item.hoursTracked)}</StatChip>}
-        <StatChip>{formatDays(item.daysSinceLastMention, t)}</StatChip>
-      </div>
-    </motion.button>
-  );
-}
-
-function DashboardInsightSection({
-  title, subtitle, icon: Icon, children, empty, loading, className, onRefresh, refreshing, viewMoreHref, viewMoreLabel, gridColsClass = "grid-cols-1"
-}: {
-  title: string; subtitle?: string; icon: ComponentType<{ className?: string }>; children: ReactNode; empty: boolean; loading: boolean; className?: string; onRefresh?: () => void; refreshing?: boolean; viewMoreHref?: string; viewMoreLabel?: string; gridColsClass?: string;
-}) {
-  const navigate = useNavigate();
-  const { t } = useLanguage();
-  const items = Children.toArray(children);
-  const previewItems = items.slice(0, 4);
-  const expandedItems = items.slice(4, 10);
-  const totalCount = items.length;
-  const visibleCount = Math.min(10, totalCount);
-  const showAccordion = !loading && !empty && items.length > 4;
-
-  return (
-    <div className={cn("rounded-sm bg-neutral-950/70 p-4 sm:p-6 flex flex-col shadow-sm", className)}>
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 sm:mb-5">
-        <div>
-          <p className="text-[10px] uppercase tracking-[0.32em] text-white/40 font-mono">{t("db_signal")}</p>
-          <h2 className="mt-1 font-serif text-xl text-white">{title}</h2>
-          {subtitle && <p className="mt-1 text-xs text-white/50">{subtitle}</p>}
-        </div>
-        <div className="flex items-center justify-end gap-4 mt-1 sm:mt-0">
-          {onRefresh && (
-            <button
-              type="button"
-              onClick={onRefresh}
-              disabled={refreshing}
-              className="text-[11px] font-mono uppercase tracking-widest text-white/40 hover:text-white transition-colors flex items-center gap-1.5"
-            >
-              <RefreshCw className={cn("h-3 w-3", refreshing && "animate-spin")} />
-              <span>{t("db_refresh")}</span>
-            </button>
-          )}
-          {viewMoreHref && (
-            <button
-              type="button"
-              onClick={() => navigate(viewMoreHref)}
-              className="text-[11px] font-mono uppercase tracking-widest text-white/40 hover:text-white transition-colors"
-            >
-              {viewMoreLabel || t("db_viewAll")}
-            </button>
-          )}
-        </div>
-      </div>
-      <div className="flex-1 flex flex-col justify-between min-h-0">
-        {loading ? (
-          <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
-            {[0, 1].map((i) => (
-              <div key={i} className="h-[120px] w-full animate-pulse rounded-xl bg-neutral-900/40" />
-            ))}
-          </div>
-        ) : empty ? (
-          <div className="rounded-xl bg-neutral-900/50 p-6 text-center text-xs text-white/40 h-full flex flex-col items-center justify-center min-h-[120px]">
-            {t("db_nothingToShow")}
-          </div>
-        ) : (
-          <>
-            <div className={cn("grid gap-3", gridColsClass)}>{previewItems}</div>
-            {showAccordion ? (
-              <Accordion type="single" collapsible className="mt-3">
-                <AccordionItem value={title} className="border-none">
-                  <AccordionTrigger className="px-0 py-0 hover:no-underline">
-                    <div className="flex w-full items-center justify-between gap-3 rounded-xl bg-neutral-900/50 px-3 py-2 text-xs font-medium text-white/50 hover:bg-neutral-900/60 transition-colors">
-                      <span>{t("db_showMore", { n: visibleCount - previewItems.length })}</span>
-                      <span>{t("db_countOfTotal", { count: visibleCount, total: totalCount })}</span>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="px-0 pt-3 pb-0">
-                    <div className={cn("grid gap-3 mb-3", gridColsClass)}>
-                      {expandedItems}
-                    </div>
-                    <div className="flex items-center justify-between gap-3 text-[10px] text-white/40 pt-2 border-t border-white/10">
-                      <span>{totalCount > visibleCount ? t("db_showingOfTotal", { count: visibleCount, total: totalCount }) : t("db_showingAll", { count: visibleCount })}</span>
-                      {viewMoreHref && (
-                        <button
-                          type="button"
-                          onClick={() => navigate(viewMoreHref)}
-                          className="text-white/50 hover:text-white transition-colors"
-                        >
-                          {viewMoreLabel || t("db_viewAll")}
-                        </button>
-                      )}
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-              </Accordion>
-            ) : null}
-          </>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// --- MAIN DASHBOARD ---
 export default function Dashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { usage, applyUsageDelta } = usePlanGate();
   const { t } = useLanguage();
-  const limits = getPlanLimits(user);
-  const [exporting, setExporting] = useState(false);
   const [timeRange, setTimeRange] = useState<TimeRange>("14d");
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [showOnboardingPopup, setShowOnboardingPopup] = useState(false);
   const { createNote, creating } = useCreateNote({ onLimitReached: () => setUpgradeOpen(true) });
 
-  // Check for new account onboarding popup
   useEffect(() => {
-    const isNewAccount = localStorage.getItem('newAccountCreated') === 'true';
+    const isNewAccount = localStorage.getItem("newAccountCreated") === "true";
     if (isNewAccount) {
       setShowOnboardingPopup(true);
-      localStorage.removeItem('newAccountCreated');
+      localStorage.removeItem("newAccountCreated");
     }
   }, []);
-
-  // Insights State
-  const [insightsLoading, setInsightsLoading] = useState(true);
-  const [refreshingInsights, setRefreshingInsights] = useState(false);
-  const [hotNotes, setHotNotes] = useState<NoteInsight[]>([]);
-  const [forgottenNotes, setForgottenNotes] = useState<NoteInsight[]>([]);
-  const [hotEntities, setHotEntities] = useState<EntityInsight[]>([]);
-  const [forgottenEntities, setForgottenEntities] = useState<EntityInsight[]>([]);
-
-  const loadInsights = async (silent = false) => {
-    if (!silent) setInsightsLoading(true);
-    else setRefreshingInsights(true);
-    try {
-      const [hn, fn, he, fe] = await Promise.all([
-        insightsApi.hotNotes(12),
-        insightsApi.forgottenNotes(12),
-        insightsApi.hotEntities(12),
-        insightsApi.forgottenEntities(12),
-      ]);
-      
-      const extractData = (res: any) => {
-        if (!res) return [];
-        const d = res.data;
-        if (Array.isArray(d)) return d;
-        if (d && typeof d === 'object') {
-          return d.items || d.content || d.data || d.insights || [];
-        }
-        return [];
-      };
-
-      setHotNotes(extractData(hn));
-      setForgottenNotes(extractData(fn));
-      setHotEntities(extractData(he));
-      setForgottenEntities(extractData(fe));
-    } catch (err) {
-      toast({ title: t("db_toastInsightsFailTitle"), description: t("db_toastTryAgain"), variant: "destructive" });
-    } finally {
-      setInsightsLoading(false);
-      setRefreshingInsights(false);
-    }
-  };
-
-  useEffect(() => {
-    loadInsights();
-  }, []);
-
-  const handleExportData = async () => {
-    if (exporting) return;
-    setExporting(true);
-    try {
-      const { authApi } = await import("@/lib/api");
-      const res = await authApi.exportVaultZip();
-      const blob = res.data instanceof Blob ? res.data : new Blob([res.data], { type: "application/zip" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "continuum-vault.zip";
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-      toast({ title: t("db_toastExportReadyTitle"), description: t("db_toastExportReadyDesc") });
-    } catch (e) {
-      console.error("Export failed", e);
-      toast({ title: t("db_toastExportFailedTitle"), description: t("db_toastTryAgain"), variant: "destructive" });
-    } finally {
-      setExporting(false);
-    }
-  };
 
   const { data: summary, isLoading: summaryLoading } = useQuery({
     queryKey: ["dashboard", "summary"],
@@ -471,33 +156,6 @@ export default function Dashboard() {
     retry: 1,
     staleTime: 60_000,
   });
-
-  const { data: vaultFiles } = useQuery({
-    queryKey: ["vault", "files"],
-    queryFn: () => vaultApi.list().then((r) => r.data),
-  });
-
-  const vaultFilesList = useMemo(() => {
-    if (Array.isArray(vaultFiles)) return vaultFiles;
-    if (vaultFiles && typeof vaultFiles === 'object') {
-      return (vaultFiles as any).files || (vaultFiles as any).data || (vaultFiles as any).content || [];
-    }
-    return [];
-  }, [vaultFiles]);
-
-  const vaultUsedMB = useMemo(() => {
-    return vaultFilesList.reduce((t: number, f: any) => t + (f?.size ?? 0) / (1024 * 1024), 0) ?? 0;
-  }, [vaultFilesList]);
-
-  const vaultMaxMB = limits.maxVaultSizeMB;
-  const storageUsed = `${vaultUsedMB.toFixed(1)} MB`;
-  const storageLimit = isUnlimited(vaultMaxMB) ? "∞" : `${vaultMaxMB} MB`;
-
-  useEffect(() => {
-    if (vaultFilesList == null || usage == null || vaultFilesList.length === 0) return;
-    const storageMB = Number(vaultUsedMB.toFixed(2));
-    applyUsageDelta({ vaultSizeMB: storageMB - usage.vaultSizeMB });
-  }, [vaultFilesList, vaultUsedMB, usage, applyUsageDelta]);
 
   const recentNotes = useMemo(() => {
     const summaryNotes = summary?.recentNotes || (summary && typeof summary === 'object' ? ((summary as any).notes || (summary as any).data) : null);
@@ -629,7 +287,6 @@ export default function Dashboard() {
         {/* HEADER */}
         <header className="border-b border-white/10 pb-6 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-[10px] uppercase tracking-[0.32em] text-white/30 font-mono">{t("db_overview")}</p>
             <h1 className="mt-2 font-serif text-4xl sm:text-5xl tracking-tight text-white">
               {greeting}, {displayName}
             </h1>
@@ -638,18 +295,6 @@ export default function Dashboard() {
             </p>
           </div>
           <div className="flex items-center gap-1.5 self-start sm:self-auto">
-            <Button size="sm" variant="outline" onClick={() => navigate("/activities")} className="gap-1 h-7 px-2.5 text-[11px]">
-              <Flame className="h-3 w-3" />
-              {t("db_activities")}
-            </Button>
-            <Button size="sm" variant="outline" onClick={() => navigate("/projects")} className="gap-1 h-7 px-2.5 text-[11px]">
-              <Clock className="h-3 w-3" />
-              {t("db_project")}
-            </Button>
-            <Button size="sm" onClick={() => void createNote()} disabled={creating} className="gap-1 h-7 px-2.5 text-[11px]">
-              {creating ? <Loader2 className="h-3 w-3 animate-spin" /> : <Plus className="h-3 w-3" />}
-              {creating ? t("db_creating") : t("db_newNote")}
-            </Button>
           </div>
 
 
@@ -670,12 +315,12 @@ export default function Dashboard() {
         <section className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           
           {/* BLOCO 1: PERFORMANCE & METRICS */}
-          <div className="border border-white/5 bg-white/[0.01] rounded-sm p-4 sm:p-6 lg:col-span-8 flex flex-col justify-between">
+          <Card variant="faint" className="lg:col-span-12 flex flex-col justify-between">
+          <CardContent className="p-4 sm:p-6 flex flex-col justify-between h-full">
             <div className="flex flex-col gap-4 mb-6">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3">
                   <div>
-                    <p className="text-[10px] uppercase tracking-[0.32em] text-white/30 font-mono">{t("db_signal")}</p>
                     <h2 className="mt-1 font-serif text-2xl text-white">{t("db_scoreEvolution")}</h2>
                     <p className="mt-1 text-xs text-white/50">{t("db_scoreEvolutionSubtitle")}</p>
                   </div>
@@ -687,22 +332,24 @@ export default function Dashboard() {
                       {scoreStats.current.toFixed(2)}
                     </p>
                   </div>
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
                     onClick={() => refetchScoreTimeline()}
                     disabled={scoreTimelineFetching}
-                    className="text-xs text-white/50 hover:text-white hidden sm:flex items-center gap-1 transition-colors disabled:opacity-50"
+                    className="h-auto p-0 bg-transparent hover:bg-transparent normal-case text-xs text-white/50 hover:text-white hidden sm:flex items-center gap-1 transition-colors disabled:opacity-50"
                   >
                     <RefreshCw className={cn("h-3 w-3", scoreTimelineFetching && "animate-spin")} />
                     {t("db_score")}
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="button"
+                    variant="ghost"
                     onClick={() => navigate("/insights")}
-                    className="text-xs text-white/50 hover:text-white hidden sm:block transition-colors"
+                    className="h-auto p-0 bg-transparent hover:bg-transparent normal-case text-xs text-white/50 hover:text-white hidden sm:block transition-colors"
                   >
                     {t("db_insightsArrow")}
-                  </button>
+                  </Button>
                 </div>
               </div>
 
@@ -718,19 +365,20 @@ export default function Dashboard() {
                     "total": t("db_rangeTotal")
                   };
                   return (
-                    <button
+                    <Button
                       key={range}
                       type="button"
+                      variant="ghost"
                       onClick={() => setTimeRange(range)}
                       className={cn(
-                        "text-[10px] font-mono uppercase tracking-widest px-3 py-1.5 rounded-sm transition-colors shrink-0",
+                        "h-auto normal-case text-[10px] font-mono uppercase tracking-widest px-3 py-1.5 rounded-sm transition-colors shrink-0",
                         timeRange === range
-                          ? "bg-white/[0.06] text-white"
-                          : "text-white/40 hover:text-white/70"
+                          ? "bg-white/[0.06] text-white hover:bg-white/[0.06] hover:text-white"
+                          : "bg-transparent text-white/40 hover:bg-transparent hover:text-white/70"
                       )}
                     >
                       {labels[range]}
-                    </button>
+                    </Button>
                   );
                 })}
               </div>
@@ -821,117 +469,43 @@ export default function Dashboard() {
                 </>
               )}
             </div>
-          </div>
+          </CardContent>
+          </Card>
 
-          {/* PLAN USAGE CARD */}
-          <div className="hidden border border-white/5 bg-white/[0.01] rounded-sm p-4 sm:p-6 lg:col-span-4 flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between gap-3 mb-5">
-                <div>
-                  <p className="text-[10px] uppercase tracking-[0.32em] text-white/30 font-mono">{t("db_account")}</p>
-                  <h2 className="mt-1 font-serif text-2xl text-white">{t("db_planLimits")}</h2>
-                </div>
-                <span className="text-[9px] font-mono uppercase tracking-widest text-white/70 border border-white/10 px-2 py-1 rounded-sm">
-                  {user?.plan || t("db_free")}
-                </span>
-              </div>
+          {/* HABITS TO COMPLETE TODAY */}
+          <TodayHabitsCard />
 
-              {usage ? (
-                <div className="space-y-3.5">
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-white/60">{t("db_notes")}</span>
-                      <span className="text-white/80 font-mono text-[11px] tabular-nums">
-                        {usage.notesCount} / {isUnlimited(limits.maxNotes) ? "∞" : limits.maxNotes}
-                      </span>
-                    </div>
-                    <Progress value={isUnlimited(limits.maxNotes) ? 0 : Math.min((usage.notesCount / limits.maxNotes) * 100, 100)} className="h-1 bg-white/5" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-white/60">{t("db_entities")}</span>
-                      <span className="text-white/80 font-mono text-[11px] tabular-nums">
-                        {usage.entitiesCount} / {isUnlimited(limits.maxEntities) ? "∞" : limits.maxEntities}
-                      </span>
-                    </div>
-                    <Progress value={isUnlimited(limits.maxEntities) ? 0 : Math.min((usage.entitiesCount / limits.maxEntities) * 100, 100)} className="h-1 bg-white/5" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-white/60">{t("db_stream")}</span>
-                      <span className="text-white/80 font-mono text-[11px] tabular-nums">{storageUsed} / {storageLimit}</span>
-                    </div>
-                    <Progress value={isUnlimited(limits.maxVaultSizeMB) ? 0 : Math.min((usage.vaultSizeMB / limits.maxVaultSizeMB) * 100, 100)} className="h-1 bg-white/5" />
-                  </div>
-                </div>
-              ) : (
-                <div className="text-xs text-white/40">{t("db_loadingUsage")}</div>
-              )}
-
-              <div className="mt-5 rounded-xl border border-white/5 bg-white/[0.01] p-3.5 text-[11px]">
-                <div className="grid gap-3 grid-cols-2">
-                  <div className="flex flex-col gap-0.5">
-                    <span className="text-neutral-500 text-[9px] uppercase font-semibold tracking-wider">{t("db_historyRetention")}</span>
-                    <span className="text-neutral-300 font-medium">{isUnlimited(limits.historyDays) ? t("db_unlimited") : t("db_daysUnit", { n: limits.historyDays })}</span>
-                  </div>
-                  <div className="flex flex-col gap-0.5">
-                    <span className="text-neutral-500 text-[9px] uppercase font-semibold tracking-wider">{t("db_metadataLimit")}</span>
-                    <span className="text-neutral-300 font-medium">{isUnlimited(limits.maxMetadataSizeKb) ? t("db_unlimited") : t("db_kbUnit", { n: limits.maxMetadataSizeKb })}</span>
-                  </div>
-                  <div className="flex items-center justify-between col-span-2 pt-2.5 border-t border-white/5 mt-0.5 text-neutral-400">
-                    <span>{t("db_dataExport")}</span>
-                    {user?.dataExport ? (
-                      <button
-                        type="button"
-                        onClick={handleExportData}
-                        disabled={exporting}
-                        className="text-neutral-200 underline underline-offset-4 hover:text-white disabled:opacity-50 transition-colors"
-                      >
-                        {exporting ? t("db_exporting") : t("db_downloadBackup")}
-                      </button>
-                    ) : (
-                      <span className="text-neutral-600 text-[10px]">{t("db_upgradeRequired")}</span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => navigate("/subscription")}
-              className="mt-4 text-xs text-neutral-400 hover:text-white self-start transition-colors"
-            >
-              {t("db_manageSubscription")}
-            </button>
-          </div>
-
-          {/* BLOCO 2: WORKSPACE ACTIVITY */}
           {/* RECENT NOTES CARD */}
-          <div className="border border-white/5 bg-white/[0.01] rounded-sm p-4 sm:p-6 lg:col-span-4 flex flex-col">
-            <div className="flex items-center justify-between gap-3 mb-4">
-              <div>
-                <p className="text-[10px] uppercase tracking-[0.32em] text-white/30 font-mono">{t("db_stream")}</p>
-                <h2 className="mt-1 font-serif text-xl text-white">{t("db_recentNotes")}</h2>
+          <Card variant="faint" className="lg:col-span-8 flex flex-col">
+
+            <CardContent className="p-4 sm:p-6 flex flex-col flex-1">
+            <div className="flex flex-col gap-3 mb-4">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-[10px] uppercase tracking-[0.32em] text-white/30 font-mono">{t("db_stream")}</p>
+                  <h2 className="mt-1 font-serif text-xl text-white">{t("db_recentNotes")}</h2>
+                </div>
+                <Button type="button" variant="ghost" onClick={() => navigate("/notes")} className="h-auto p-0 bg-transparent hover:bg-transparent normal-case text-[11px] font-mono uppercase tracking-widest text-white/40 hover:text-white transition-colors">
+                  {t("db_viewAll")}
+                </Button>
               </div>
-              <button type="button" onClick={() => navigate("/notes")} className="text-[11px] font-mono uppercase tracking-widest text-white/40 hover:text-white transition-colors">
-                {t("db_viewAll")}
-              </button>
             </div>
             <div className="space-y-1 flex-1 overflow-y-auto max-h-[280px] sm:max-h-[310px] pr-1 scrollbar-thin">
               {recentNotes.length > 0 ? (
                 recentNotes.map((note) => (
-                  <button
+                  <Button
                     key={note.id}
                     type="button"
+                    variant="ghost"
                     onClick={() => navigate(`/notes/${note.id}`)}
-                    className="group w-full rounded-xl border border-transparent px-2.5 py-2 text-left transition-all hover:bg-neutral-900/50 hover:border-white/5"
+                    className="group w-full h-auto flex-col items-stretch normal-case rounded-xl border border-transparent px-2.5 py-2 text-left bg-transparent transition-all hover:bg-neutral-900/50 hover:border-white/5"
                   >
-                    <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center justify-between gap-3 w-full">
                       <p className="text-xs sm:text-sm font-medium text-white/80 group-hover:text-white truncate">{note.title || t("db_untitled")}</p>
                       <ArrowRight className="h-3.5 w-3.5 text-white/30 shrink-0 transition-transform group-hover:translate-x-0.5 group-hover:text-white/50" />
                     </div>
-                    <p className="mt-0.5 text-[9px] font-mono text-white/40">{formatNoteDate(note.createdAtTimestamp)}</p>
-                  </button>
+                    <p className="mt-0.5 text-[9px] font-mono text-white/40 w-full text-left">{formatNoteDate(note.createdAtTimestamp)}</p>
+                  </Button>
                 ))
               ) : (
                 <div className="rounded-xl border border-dashed border-white/5 bg-white/[0.01] p-6 text-center text-xs text-white/30 h-full flex items-center justify-center">
@@ -939,78 +513,8 @@ export default function Dashboard() {
                 </div>
               )}
             </div>
-          </div>
-
-          {/* INSIGHTS: HOT RIGHT NOW */}
-          <DashboardInsightSection
-            title={t("db_hotRightNow")}
-            subtitle={t("db_hotRightNowSubtitle")}
-            icon={Flame}
-            loading={insightsLoading}
-            empty={hotNotes.length === 0}
-            className="lg:col-span-8"
-            gridColsClass="grid-cols-1 sm:grid-cols-2"
-            onRefresh={() => loadInsights(true)}
-            refreshing={refreshingInsights}
-            viewMoreHref="/notes"
-            viewMoreLabel={t("db_viewAllNotes")}
-          >
-            {hotNotes.map((n) => (
-              <NoteCard key={n.note.id} item={n} onOpen={() => navigate(`/notes/${n.note.id}`)} />
-            ))}
-          </DashboardInsightSection>
-
-          {/* BLOCO 3: GRAPH DISCOVERY */}
-          {/* INSIGHTS: KEY PEOPLE & PROJECTS */}
-          <DashboardInsightSection
-            title={t("db_keyPeopleProjects")}
-            subtitle={t("db_keyPeopleProjectsSubtitle")}
-            icon={Users}
-            loading={insightsLoading}
-            empty={hotEntities.length === 0}
-            className="lg:col-span-4"
-            gridColsClass="grid-cols-1"
-            viewMoreHref="/entities"
-            viewMoreLabel={t("db_viewAllEntities")}
-          >
-            {hotEntities.map((e) => (
-              <EntityCard key={e.entity.id} item={e} onOpen={() => navigate(`/entities/${e.entity.id}`)} />
-            ))}
-          </DashboardInsightSection>
-
-          {/* INSIGHTS: WORTH REVISITING */}
-          <DashboardInsightSection
-            title={t("db_worthRevisiting")}
-            subtitle={t("db_worthRevisitingSubtitle")}
-            icon={Clock}
-            loading={insightsLoading}
-            empty={forgottenNotes.length === 0}
-            className="lg:col-span-4"
-            gridColsClass="grid-cols-1"
-            viewMoreHref="/notes"
-            viewMoreLabel={t("db_viewAllNotes")}
-          >
-            {forgottenNotes.map((n) => (
-              <NoteCard key={n.note.id} item={n} onOpen={() => navigate(`/notes/${n.note.id}`)} />
-            ))}
-          </DashboardInsightSection>
-
-          {/* INSIGHTS: FORGOTTEN GEMS */}
-          <DashboardInsightSection
-            title={t("db_forgottenGems")}
-            subtitle={t("db_forgottenGemsSubtitle")}
-            icon={TrendingUp}
-            loading={insightsLoading}
-            empty={forgottenEntities.length === 0}
-            className="lg:col-span-4"
-            gridColsClass="grid-cols-1"
-            viewMoreHref="/entities"
-            viewMoreLabel={t("db_viewAllEntities")}
-          >
-            {forgottenEntities.map((e) => (
-              <EntityCard key={e.entity.id} item={e} onOpen={() => navigate(`/entities/${e.entity.id}`)} />
-            ))}
-          </DashboardInsightSection>
+            </CardContent>
+          </Card>
 
         </section>
       </div>
@@ -1060,7 +564,14 @@ export default function Dashboard() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <FloatingCreateButton
+        label={t("db_newNote")}
+        onClick={() => void createNote()}
+        icon={<Plus className="h-4 w-4" />}
+      />
     </AppLayout>
+
 
   );
 }

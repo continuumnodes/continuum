@@ -1,8 +1,10 @@
-import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
 import AppLayout from "@/components/AppLayout";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { notesApi, vaultApi } from "@/lib/api";
 import { usePlanGate } from "@/hooks/usePlanGate";
 import { useCreateNote } from "@/hooks/useCreateNote";
@@ -32,6 +34,12 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { InsightSignalBadge } from "@/components/InsightSignal";
+import { FilterChips } from "@/components/ui/filter-chips";
+import { FitText } from "@/components/ui/fit-text";
+import { ListRowContent } from "@/components/ui/list-row-content";
+import { StickyNote } from "@/lib/heroicons";
+import { FloatingCreateButton } from "@/components/ui/floating-create-button";
+
 
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
@@ -104,14 +112,14 @@ interface NavItemProps {
 }
 function NavItem({ label, count, active, onClick }: NavItemProps) {
   return (
-    <button
-      onClick={onClick}
+    <Button
+      type="button"
+      variant="ghost"
       className={cn(
-        "group flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-left text-[13px] transition-colors",
-        active
-          ? "text-white"
-          : "text-white/45 hover:text-white/80"
+        "group flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-left text-[13px] normal-case transition-colors",
+        active ? "text-white" : "text-white/45 hover:text-white/80"
       )}
+      onClick={onClick}
     >
       <span className="flex items-center gap-2">
         <span
@@ -126,7 +134,7 @@ function NavItem({ label, count, active, onClick }: NavItemProps) {
       <span className={cn("font-mono text-[10px] tabular-nums", active ? "text-white/60" : "text-white/30")}>
         {count}
       </span>
-    </button>
+    </Button>
   );
 }
 
@@ -280,6 +288,12 @@ export default function Notes() {
       return next;
     });
   };
+
+  useEffect(() => {
+    if (selectMode && selectedIds.size === 0) {
+      setSelectMode(false);
+    }
+  }, [selectMode, selectedIds]);
 
   const exitSelectMode = () => {
     setSelectMode(false);
@@ -516,7 +530,7 @@ export default function Notes() {
           </SheetContent>
         </Sheet>
 
-        <div className="mx-auto flex max-w-6xl flex-col gap-10 px-6 py-10 lg:flex-row lg:gap-16 lg:px-12 lg:py-16">
+        <div className="mx-auto flex max-w-6xl flex-col gap-10 px-6 py-5 lg:flex-row lg:gap-16 lg:px-12 lg:py-16">
           {/* ─── Sidebar (desktop only) ──────────────────────────── */}
           <aside className="hidden lg:sticky lg:top-16 lg:block lg:w-52 lg:shrink-0 lg:self-start">
             {SidebarContent}
@@ -524,23 +538,14 @@ export default function Notes() {
 
           {/* ─── Main ────────────────────────────────────────────── */}
           <main className="min-w-0 flex-1">
-            {/* Header */}
-            <header className="mb-8">
+            {/* Header (desktop) */}
+            <header className="mb-8 hidden lg:block">
               <div className="flex items-end justify-between gap-4">
                 <div className="min-w-0">
                   <p className="text-[10px] uppercase tracking-[0.32em] text-white/30">{viewLabel}</p>
                   <h1 className="mt-2 font-serif text-5xl tracking-tight text-white">{t("notes_title")}</h1>
                 </div>
                 <div className="flex flex-wrap items-center justify-end gap-2">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setFilterDrawerOpen(true)}
-                    className="lg:hidden h-9 w-9 p-0 text-white/80"
-                    aria-label={t("notes_filters")}
-                  >
-                    <SlidersHorizontal className="h-4 w-4" />
-                  </Button>
                   {selectMode && (
                     <Button size="sm" className="gap-2" onClick={exitSelectMode}>
                       <X className="h-3.5 w-3.5" /> {t("select_done")}
@@ -555,11 +560,41 @@ export default function Notes() {
               {limitMsg && <p className="mt-3 text-xs text-white/40">{limitMsg}</p>}
             </header>
 
-            {/* Sticky search */}
-            <div className="sticky top-14 z-10 -mx-4 border-b border-white/10 bg-black/70 px-4 py-3 backdrop-blur-xl">
+            {/* Mobile: search + view chips */}
+            <div className="mb-5 space-y-3 lg:hidden">
+              {selectMode && (
+                <Button size="sm" className="gap-2" onClick={exitSelectMode}>
+                  <X className="h-3.5 w-3.5" /> {t("select_done")}
+                </Button>
+              )}
+              <div className="relative z-0">
+
+                <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder={t("notes_searchAmong", { n: counts.all }) || `Search among ${counts.all} notes…`}
+                  className="h-12 w-full rounded-2xl bg-accent pl-11 text-[15px] placeholder:italic placeholder:text-muted-foreground"
+                />
+              </div>
+              <FilterChips
+                value={view}
+                onChange={(v) => setView(v as View)}
+                options={[
+                  { value: "all", label: t("notes_archive") },
+                  { value: "recent", label: t("notes_recent") },
+                  { value: "favorites", label: t("notes_favorites") },
+                  { value: "archived", label: t("notes_dormant") },
+                ]}
+              />
+            </div>
+
+            {/* Sticky search (desktop) */}
+            <div className="sticky top-14 z-10 -mx-4 hidden border-b border-white/10 bg-black/70 px-4 py-3 backdrop-blur-xl lg:block">
               <div className="relative">
                 <Search className="pointer-events-none absolute left-0 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-white/30" />
-                <input
+                <Input
+                  variant="ghost"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder={t("notes_searchPlaceholder")}
@@ -567,6 +602,7 @@ export default function Notes() {
                 />
               </div>
             </div>
+
 
             {/* Toolbar de Contagem e Controles de Ordenação */}
             <div className="flex items-center justify-between border-b border-white/5 pb-3 pt-4 mb-6 text-[11px] text-white/40">
@@ -576,22 +612,28 @@ export default function Notes() {
               <div className="flex items-center gap-4 font-mono">
                 <div className="flex items-center gap-1.5">
                   <span>{t("list_sortBy")}</span>
-                  <button
+                  <Button
+                    type="button"
+                    variant="link"
+                    size="sm"
+                    className="normal-case text-white/70 hover:text-white transition-colors"
                     onClick={() => setSortBy(sortBy === "createdAt" ? "updatedAt" : "createdAt")}
-                    className="text-white/70 hover:text-white transition-colors"
                   >
                     [{sortBy === "createdAt" ? t("list_sort_creation") : t("list_sort_modification")}]
-                  </button>
+                  </Button>
                 </div>
-                <button
+                <Button
+                  type="button"
+                  variant="link"
+                  size="sm"
+                  className="normal-case flex items-center gap-1.5 text-white/70 hover:text-white transition-colors"
                   onClick={() => setSortOrder(sortOrder === "desc" ? "asc" : "desc")}
-                  className="flex items-center gap-1.5 text-white/70 hover:text-white transition-colors"
                 >
                   <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="m3 16 4 4 4-4" /><path d="M7 20V4" /><path d="m21 8-4-4-4 4" /><path d="M17 4v16" />
                   </svg>
                   {sortOrder === "desc" ? t("list_sort_recent") : t("list_sort_oldest")}
-                </button>
+                </Button>
               </div>
             </div>
 
@@ -602,24 +644,30 @@ export default function Notes() {
                   {t("select_selected", { n: selectedIds.size })}
                 </span>
                 <div className="flex items-center gap-2">
-                  <button
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="normal-case px-3 py-1.5 text-xs text-white/70 hover:border-white/40 hover:text-white"
                     onClick={() => {
                       const allIds = filtered.map((n) => n.id);
                       const allSelected = allIds.every((id) => selectedIds.has(id));
                       setSelectedIds(allSelected ? new Set() : new Set(allIds));
                     }}
-                    className="rounded-sm border border-white/15 px-3 py-1.5 text-xs text-white/70 transition-colors hover:border-white/40 hover:text-white"
                   >
                     {filtered.length > 0 && filtered.every((n) => selectedIds.has(n.id)) ? t("select_clearAll") : t("select_all")}
-                  </button>
+                  </Button>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <button
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
                         disabled={selectedIds.size === 0 || bulkTypeApplying}
-                        className="inline-flex items-center gap-1.5 rounded-sm border border-white/15 bg-white/[0.04] px-3 py-1.5 text-xs text-white/80 transition-colors hover:border-white/40 hover:text-white disabled:opacity-40"
+                        className="normal-case inline-flex items-center gap-1.5 px-3 py-1.5 text-xs text-white/80"
                       >
                         {bulkTypeApplying ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Tag className="h-3.5 w-3.5" />} {t("notes_set_type") || "Set type"}
-                      </button>
+                      </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="min-w-[180px]">
                       {types.map((tp) => (
@@ -638,13 +686,16 @@ export default function Notes() {
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
-                  <button
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="sm"
+                    className="normal-case inline-flex items-center gap-1.5 px-3 py-1.5 text-xs"
                     onClick={() => setBulkDeleteOpen(true)}
                     disabled={selectedIds.size === 0}
-                    className="inline-flex items-center gap-1.5 rounded-sm border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-xs text-red-300 transition-colors hover:bg-red-500/20 disabled:opacity-40"
                   >
                     <Trash2 className="h-3.5 w-3.5" /> {t("common_delete")}
-                  </button>
+                  </Button>
                 </div>
               </div>
             )}
@@ -675,9 +726,12 @@ export default function Notes() {
                   const collapsed = collapsedMonths.has(key);
                   return (
                     <section key={key}>
-                      <button
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="group mb-5 flex w-full items-center justify-between border-b border-white/10 pb-2 text-left normal-case"
                         onClick={() => toggleMonth(key)}
-                        className="group mb-5 flex w-full items-center justify-between border-b border-white/10 pb-2 text-left"
                       >
                         <span className="flex items-center gap-2 text-[10px] uppercase tracking-[0.32em] text-white/40 group-hover:text-white/70">
                           {collapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
@@ -686,7 +740,7 @@ export default function Notes() {
                         <span className="font-mono text-[10px] text-white/30 tabular-nums">
                           {t(items.length === 1 ? "list_showing_entries_one" : "list_showing_entries", { n: items.length })}
                         </span>
-                      </button>
+                      </Button>
 
                       {!collapsed && (
                         <ul className="divide-y divide-white/[0.06]">
@@ -719,73 +773,67 @@ export default function Notes() {
                                     </span>
                                   )}
 
-
-                                  <div className="hidden w-20 shrink-0 pt-1 sm:block">
-                                    <p className="font-mono text-[10px] uppercase tracking-wider text-white/30">
-                                      {relativeDate(targetDate)}
-                                    </p>
-                                  </div>
-
-                                  <div className="min-w-0 flex-1">
-                                    <div className="flex items-center gap-2 flex-wrap">
-                                      <h3 className="font-serif text-xl leading-snug text-white/90 transition-colors group-hover:text-white">
-                                        {note.title || t("notes_untitled")}
-                                      </h3>
-                                      <InsightSignalBadge kind="note" id={note.id} />
-                                    </div>
-                                    {preview && (
-                                      <p className="mt-1 line-clamp-1 text-sm text-white/45">{preview}</p>
-                                    )}
-                                    <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-white/35">
-                                      {note.type && (
-                                        <span className="uppercase tracking-[0.18em]">{note.type}</span>
-                                      )}
-                                      <span className="sm:hidden">{relativeDate(targetDate)}</span>
-                                    </div>
-                                  </div>
+                                  <ListRowContent
+                                    icon={<StickyNote className="h-5 w-5" />}
+                                    title={note.title || t("notes_untitled")}
+                                    meta={
+                                      <>
+                                        {note.type ? `${note.type} · ` : ""}
+                                        {relativeDate(targetDate)}
+                                        {preview ? ` · ${preview}` : ""}
+                                      </>
+                                    }
+                                  />
 
 
                                   {!selectMode && (
                                   <div className="flex shrink-0 items-center gap-1 pt-1">
-
-                                    <span
-                                      role="button"
-                                      tabIndex={0}
-                                      onClick={(e) => toggleFavorite(note.id, e)}
-                                      onKeyDown={(e) => {
-                                        if (e.key === "Enter" || e.key === " ") {
-                                          e.preventDefault();
-                                          toggleFavorite(note.id, e as unknown as React.MouseEvent);
-                                        }
-                                      }}
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="icon"
                                       className={cn(
-                                        "cursor-pointer rounded-sm p-1.5 transition-colors",
-                                        note.favorite
-                                          ? "text-white"
-                                          : "text-white/20 opacity-0 hover:text-white/70 group-hover:opacity-100"
-                                      )}
+                                        "transition-colors p-1.5 opacity-70 hover:opacity-100",
+                                        note.favorite ? "text-white" : "text-white"
+                                      )} 
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        toggleFavorite(note.id, e);
+                                      }}
                                       aria-label={note.favorite ? t("notes_unfavorite") : t("notes_favorite")}
                                     >
                                       {note.favorite ? (
-                                        <BookmarkCheck className="h-3.5 w-3.5 fill-current" />
+                                        <BookmarkCheck className="h-3 w-3 fill-current" />
                                       ) : (
-                                        <Bookmark className="h-3.5 w-3.5" />
+                                        <Bookmark className="h-3 w-3" />
                                       )}
-                                    </span>
-                                    <span
-                                      role="button"
-                                      tabIndex={0}
+                                    </Button>
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="icon"
+                                      className="text-white transition p-1.5 opacity-70 hover:opacity-100"
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         e.preventDefault();
                                         setPendingDelete(note);
                                       }}
-                                      className="cursor-pointer rounded-sm p-1.5 text-white/20 opacity-0 transition hover:text-white/70 group-hover:opacity-100"
                                       aria-label={t("common_delete")}
                                     >
-                                      <Trash2 className="h-3.5 w-3.5" />
-                                    </span>
+                                      <Trash2 className="h-3 w-3" />
+                                    </Button>
+                                    <InsightSignalBadge kind="note" id={note.id} />
                                   </div>
+                                  )}
+                                  {selectMode && (
+                                    <span
+                                      className={cn(
+                                        "mt-1 grid h-5 w-5 shrink-0 place-items-center rounded-sm border transition-colors",
+                                        selected ? "border-white bg-white text-black" : "border-white/30 text-transparent"
+                                      )}
+                                    >
+                                      <Check className="h-3.5 w-3.5" />
+                                    </span>
                                   )}
                               </NoteRow>
                             );
@@ -801,7 +849,15 @@ export default function Notes() {
         </div>
       </div>
 
+      <FloatingCreateButton
+        label={creating ? t("notes_creating") : t("notes_new")}
+        disabled={creating}
+        onClick={handleCreate}
+        icon={<Plus className="h-4 w-4" />}
+      />
+
       <UpgradeModal open={upgradeOpen} onOpenChange={setUpgradeOpen} reason={t("notes_limit")} />
+
       <ConfirmDialog
         open={!!pendingDelete}
         onOpenChange={(open) => !open && setPendingDelete(null)}

@@ -1,7 +1,6 @@
 import { ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  SparklesIcon,
   FireIcon,
   ClockIcon,
   UsersIcon,
@@ -13,8 +12,16 @@ import {
 import AppLayout from "@/components/AppLayout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { FilterChips } from "@/components/ui/filter-chips";
+import { FitText } from "@/components/ui/fit-text";
+import { ListRowContent } from "@/components/ui/list-row-content";
+import { EntityTypeIcon } from "@/components/ui/entity-type-icon";
+import { StickyNote } from "@/lib/heroicons";
+import { SummaryMetric, SummaryMetricRow } from "@/components/ui/summary-metric";
+
 import { cn } from "@/lib/utils";
 import { insightsApi } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
@@ -126,9 +133,9 @@ const badgeStyle = (badge: string) => {
 
 function StatChip({ children }: { children: ReactNode }) {
   return (
-    <span className="inline-flex items-center gap-1 rounded-sm border border-white/5 bg-white/[0.02] px-1.5 py-0.5 font-mono text-[10px] text-white/40">
+    <Badge variant="outline" className="rounded-sm border-white/5 bg-white/[0.02] px-1.5 py-0.5 font-mono text-[10px] text-white/40">
       {children}
-    </span>
+    </Badge>
   );
 }
 
@@ -143,12 +150,14 @@ interface NavItemProps {
 
 function NavItem({ label, count, active, onClick }: NavItemProps) {
   return (
-    <button
-      onClick={onClick}
+    <Button
+      type="button"
+      variant="ghost"
       className={cn(
-        "group flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-left text-[13px] transition-colors",
+        "group flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-left text-[13px] normal-case transition-colors",
         active ? "text-white" : "text-white/45 hover:text-white/80"
       )}
+      onClick={onClick}
     >
       <span className="flex items-center gap-2">
         <span
@@ -163,7 +172,7 @@ function NavItem({ label, count, active, onClick }: NavItemProps) {
       <span className={cn("font-mono text-[10px] tabular-nums", active ? "text-white/60" : "text-white/30")}>
         {count}
       </span>
-    </button>
+    </Button>
   );
 }
 
@@ -175,41 +184,37 @@ function InsightRow({ item }: { item: InsightItem }) {
     <li>
       <button
         onClick={item.onOpen}
-        className="group relative flex w-full items-start gap-4 py-5 text-left transition-colors hover:bg-white/[0.02]"
+        className="group relative flex w-full items-center gap-4 py-4 text-left transition-colors hover:bg-white/[0.02]"
       >
-        <span
-          aria-hidden
-          className="absolute left-0 top-1/2 h-8 w-px -translate-x-3 -translate-y-1/2 bg-white opacity-0 transition-opacity group-hover:opacity-100"
-        />
-
-        <div className="hidden w-16 shrink-0 pt-1 sm:block">
-          <p className="font-mono text-xs font-medium text-white/40 group-hover:text-white/80 transition-colors">
-            {item.score.toFixed(1)}
-          </p>
-        </div>
-
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2.5">
-            <Badge variant="outline" className={cn("rounded-sm px-1.5 py-0 text-[9px] font-mono tracking-wider uppercase", badgeStyle(item.badge))}>
-              {translateBadge(item.badge, t)}
-            </Badge>
-            <span className="font-mono text-[10px] uppercase tracking-widest text-white/30">
+        <ListRowContent
+          icon={
+            item.kind === "note" ? (
+              <StickyNote className="h-5 w-5" />
+            ) : (
+              <EntityTypeIcon type={item.subtitle} className="h-5 w-5" />
+            )
+          }
+          title={item.title}
+          meta={
+            <>
               {item.subtitle}
-            </span>
-          </div>
-
-          <h3 className="mt-2 font-serif text-xl leading-snug text-white/95 group-hover:text-white transition-colors">
-            {item.title}
-          </h3>
-
-          <div className="mt-3 flex flex-wrap items-center gap-1.5">
-            {item.metaDetails.mentions ? <StatChip>{t("ins_mentions", { count: item.metaDetails.mentions })}</StatChip> : null}
-            {item.metaDetails.links ? <StatChip>{t("ins_links", { count: item.metaDetails.links })}</StatChip> : null}
-            {item.metaDetails.hours ? <StatChip>{t("ins_hours_tracked", { hours: formatHours(item.metaDetails.hours) })}</StatChip> : null}
-            <StatChip>{formatDays(item.metaDetails.daysAgo, t)}</StatChip>
-          </div>
-        </div>
+              {" · "}
+              {formatDays(item.metaDetails.daysAgo, t)}
+              {item.metaDetails.mentions ? ` · ${t("ins_mentions", { count: item.metaDetails.mentions })}` : ""}
+              {item.metaDetails.hours ? ` · ${t("ins_hours_tracked", { hours: formatHours(item.metaDetails.hours) })}` : ""}
+            </>
+          }
+          trailing={
+            <div className="flex items-center gap-2">
+              <Badge variant="outline" className={cn("rounded-sm px-1.5 py-0 text-[9px] font-mono tracking-wider uppercase", badgeStyle(item.badge))}>
+                {translateBadge(item.badge, t)}
+              </Badge>
+              <span className="hidden font-mono text-xs text-white/40 sm:inline">{item.score.toFixed(1)}</span>
+            </div>
+          }
+        />
       </button>
+
     </li>
   );
 }
@@ -390,13 +395,11 @@ export default function Insights() {
     <AppLayout>
       <div
         className="relative min-h-full"
-        onTouchStart={onSwipeStart}
-        onTouchEnd={onSwipeEnd}
       >
         {/* Edge swipe hint (mobile only) */}
         <div
           aria-hidden
-          className="pointer-events-none fixed left-0 top-1/2 z-20 hidden h-24 w-[3px] -translate-y-1/2 rounded-r bg-white/15 max-lg:block"
+          className="pointer-events-none fixed left-0 top-1/2 z-20 hidden h-24 w-[3px] -translate-y-1/2 rounded-r bg-white/15"
         />
 
         {/* Menu Lateral Mobile */}
@@ -407,7 +410,7 @@ export default function Insights() {
           </SheetContent>
         </Sheet>
 
-        <div className="mx-auto flex max-w-6xl flex-col gap-10 px-6 py-10 lg:flex-row lg:gap-16 lg:px-12 lg:py-16">
+        <div className="mx-auto flex max-w-6xl flex-col gap-10 px-6 py-5 lg:flex-row lg:gap-16 lg:px-12 lg:py-16">
           {/* Sidebar Desktop */}
           <aside className="hidden lg:sticky lg:top-16 lg:block lg:w-52 lg:shrink-0 lg:self-start">
             {SidebarContent}
@@ -415,7 +418,7 @@ export default function Insights() {
 
           {/* Conteúdo Principal */}
           <main className="min-w-0 flex-1">
-            <header className="mb-8">
+            <header className="mb-8 hidden lg:block">
               <div className="flex items-end justify-between gap-4">
                 <div className="min-w-0">
                   <p className="text-[10px] uppercase tracking-[0.32em] text-white/30">{t("ins_intelligence")}</p>
@@ -425,13 +428,6 @@ export default function Insights() {
                   </p>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
-                  <button
-                    onClick={() => setFilterDrawerOpen(true)}
-                    className="grid h-9 w-9 place-items-center rounded-sm border border-white/15 text-white/80 transition-colors hover:border-white/40 hover:text-white lg:hidden"
-                    aria-label={t("ins_open_filters")}
-                  >
-                    <AdjustmentsHorizontalIcon className="h-3.5 w-3.5" />
-                  </button>
                   <Button
                     onClick={() => load(true)}
                     disabled={refreshing}
@@ -445,24 +441,53 @@ export default function Insights() {
               </div>
             </header>
 
-            {/* Métricas Superiores em Grid */}
-            <div className="grid gap-4 grid-cols-2 md:grid-cols-3 mb-8">
-              <div className="border border-white/5 bg-white/[0.01] p-4 rounded-sm">
-                <p className="text-[9px] uppercase tracking-widest text-white/30 font-mono">{t("ins_signals_found")}</p>
-                <p className="mt-2 text-2xl font-mono tracking-tight text-white">{counts.all}</p>
+            {/* Métricas superiores — mesmo padrão do Dashboard */}
+            <SummaryMetricRow className="mb-6 lg:mb-8">
+              <SummaryMetric label={t("ins_signals_found")} value={String(counts.all)} />
+              <SummaryMetric label={t("ins_top_strength")} value={topScore.toFixed(1)} />
+              <SummaryMetric
+                label={t("ins_archived_gems")}
+                value={String(counts.worthRevisiting + counts.forgottenGems)}
+              />
+            </SummaryMetricRow>
+
+
+            {/* Mobile: search + category chips */}
+            <div className="mb-5 space-y-3 lg:hidden">
+              <div className="flex items-center gap-2">
+                <div className="relative z-0 flex-1">
+                  <MagnifyingGlassIcon className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder={t("ins_searchAmong", { n: counts.all }) || `Search among ${counts.all} signals…`}
+                    className="h-12 w-full rounded-2xl bg-accent pl-11 text-[15px] placeholder:italic placeholder:text-muted-foreground"
+                  />
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-12 w-12 shrink-0 rounded-2xl bg-accent"
+                  onClick={() => load(true)}
+                  disabled={refreshing}
+                  aria-label={t("ins_refresh")}
+                >
+                  <ArrowPathIcon className={cn("h-4 w-4", refreshing && "animate-spin")} />
+                </Button>
               </div>
-              <div className="border border-white/5 bg-white/[0.01] p-4 rounded-sm">
-                <p className="text-[9px] uppercase tracking-widest text-white/30 font-mono">{t("ins_top_strength")}</p>
-                <p className="mt-2 text-2xl font-mono tracking-tight text-white">{topScore.toFixed(1)}</p>
-              </div>
-              <div className="border border-white/5 bg-white/[0.01] p-4 rounded-sm col-span-2 md:col-span-1">
-                <p className="text-[9px] uppercase tracking-widest text-white/30 font-mono">{t("ins_archived_gems")}</p>
-                <p className="mt-2 text-2xl font-mono tracking-tight text-white">{counts.worthRevisiting + counts.forgottenGems}</p>
-              </div>
+              <FilterChips
+                value={view}
+                onChange={(v) => setView(v as View)}
+                options={[
+                  { value: "all", label: t("ins_all_insights") },
+                  ...categoryOrder.map((cat) => ({ value: cat, label: t(CATEGORY_META[cat].labelKey) })),
+                ]}
+              />
             </div>
 
-            {/* Input de Busca Sticky */}
-            <div className="sticky top-14 z-10 -mx-4 border-b border-white/10 bg-black/70 px-4 py-3 backdrop-blur-xl">
+            {/* Input de Busca Sticky (desktop) */}
+            <div className="sticky top-14 z-10 -mx-4 hidden border-b border-white/10 bg-black/70 px-4 py-3 backdrop-blur-xl lg:block">
               <div className="relative">
                 <MagnifyingGlassIcon className="pointer-events-none absolute left-0 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-white/30" />
                 <Input
@@ -473,6 +498,7 @@ export default function Insights() {
                 />
               </div>
             </div>
+
 
             <div className="flex items-center justify-between border-b border-white/5 pb-3 pt-4 mb-4 text-[11px] text-white/40">
               <div>

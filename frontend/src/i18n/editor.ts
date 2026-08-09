@@ -93,6 +93,8 @@ export const dict: Module = {
     ed_cmd_link: "Link",
     ed_cmd_image: "Image",
     ed_cmd_table: "Table",
+    ed_cmd_file: "File",
+    ed_cmd_upload: "Upload file",
     ed_prompt_url: "URL",
     ed_prompt_image_url: "Image URL",
 
@@ -124,6 +126,11 @@ export const dict: Module = {
     ed_slash_table_desc: "3x3 table",
     ed_slash_image_title: "Image",
     ed_slash_image_desc: "Embed by URL",
+    ed_view_mode: "Read mode",
+    ed_edit_mode: "Edit mode",
+    ed_always_on: "Always on",
+    ed_slash_upload_title: "Upload file",
+    ed_slash_upload_desc: "Image, PDF or audio from your device",
 
     ed_searching_query: 'Searching "{query}"',
     ed_link_a_note: "Link a note",
@@ -283,6 +290,8 @@ export const dict: Module = {
     ed_cmd_link: "Enlace",
     ed_cmd_image: "Imagen",
     ed_cmd_table: "Tabla",
+    ed_cmd_file: "Archivo",
+    ed_cmd_upload: "Subir archivo",
     ed_prompt_url: "URL",
     ed_prompt_image_url: "URL de la imagen",
 
@@ -314,6 +323,11 @@ export const dict: Module = {
     ed_slash_table_desc: "Tabla 3x3",
     ed_slash_image_title: "Imagen",
     ed_slash_image_desc: "Insertar por URL",
+    ed_view_mode: "Modo lectura",
+    ed_edit_mode: "Modo edición",
+    ed_always_on: "Siempre activo",
+    ed_slash_upload_title: "Subir archivo",
+    ed_slash_upload_desc: "Imagen, PDF o audio desde tu dispositivo",
 
     ed_searching_query: 'Buscando "{query}"',
     ed_link_a_note: "Vincular una nota",
@@ -473,6 +487,8 @@ export const dict: Module = {
     ed_cmd_link: "Link",
     ed_cmd_image: "Imagem",
     ed_cmd_table: "Tabela",
+    ed_cmd_file: "Arquivo",
+    ed_cmd_upload: "Enviar arquivo",
     ed_prompt_url: "URL",
     ed_prompt_image_url: "URL da imagem",
 
@@ -504,6 +520,11 @@ export const dict: Module = {
     ed_slash_table_desc: "Tabela 3x3",
     ed_slash_image_title: "Imagem",
     ed_slash_image_desc: "Incorporar por URL",
+    ed_view_mode: "Modo leitura",
+    ed_edit_mode: "Modo edição",
+    ed_always_on: "Sempre ativo",
+    ed_slash_upload_title: "Enviar arquivo",
+    ed_slash_upload_desc: "Imagem, PDF ou áudio do seu dispositivo",
 
     ed_searching_query: 'Buscando "{query}"',
     ed_link_a_note: "Vincular uma nota",
@@ -663,6 +684,8 @@ export const dict: Module = {
     ed_cmd_link: "Lien",
     ed_cmd_image: "Image",
     ed_cmd_table: "Tableau",
+    ed_cmd_file: "Fichier",
+    ed_cmd_upload: "Téléverser un fichier",
     ed_prompt_url: "URL",
     ed_prompt_image_url: "URL de l'image",
 
@@ -694,6 +717,11 @@ export const dict: Module = {
     ed_slash_table_desc: "Tableau 3x3",
     ed_slash_image_title: "Image",
     ed_slash_image_desc: "Intégrer via une URL",
+    ed_view_mode: "Mode lecture",
+    ed_edit_mode: "Mode édition",
+    ed_always_on: "Toujours actif",
+    ed_slash_upload_title: "Téléverser un fichier",
+    ed_slash_upload_desc: "Image, PDF ou audio depuis votre appareil",
 
     ed_searching_query: 'Recherche de "{query}"',
     ed_link_a_note: "Lier une note",

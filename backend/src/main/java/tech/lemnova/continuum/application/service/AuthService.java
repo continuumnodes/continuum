@@ -19,7 +19,7 @@ import tech.lemnova.continuum.domain.token.TokenBlacklist;
 import tech.lemnova.continuum.domain.token.TokenBlacklistRepository;
 import tech.lemnova.continuum.domain.user.User;
 import tech.lemnova.continuum.domain.user.UserRepository;
-import tech.lemnova.continuum.infra.notification.DiscordNotificationService;
+import tech.lemnova.continuum.infra.notification.TelegramNotificationService;
 import tech.lemnova.continuum.infra.security.JwtService;
 import tech.lemnova.continuum.infra.security.RefreshTokenService;
 import tech.lemnova.continuum.infra.vault.VaultStorageService;
@@ -42,7 +42,7 @@ public class AuthService {
     private final JwtService jwtService;
     private final RefreshTokenService refreshTokenService;
     private final VaultStorageService vaultStorage;
-    private final DiscordNotificationService discordNotificationService;
+    private final TelegramNotificationService telegramNotificationService;
     private final PlanConfiguration planConfig;
 
     public AuthService(UserRepository users,
@@ -52,7 +52,7 @@ public class AuthService {
                        JwtService jwtService,
                        RefreshTokenService refreshTokenService,
                        VaultStorageService vaultStorage,
-                       DiscordNotificationService discordNotificationService,
+                       TelegramNotificationService telegramNotificationService,
                        PlanConfiguration planConfig) {
         this.users = users;
         this.subscriptions = subscriptions;
@@ -61,7 +61,7 @@ public class AuthService {
         this.jwtService = jwtService;
         this.refreshTokenService = refreshTokenService;
         this.vaultStorage = vaultStorage;
-        this.discordNotificationService = discordNotificationService;
+        this.telegramNotificationService = telegramNotificationService;
         this.planConfig = planConfig;
     }
 
@@ -94,7 +94,7 @@ public class AuthService {
             user = users.save(user);
             createFreeSubscription(user.getId());
             initVaultAsync(vaultId);
-            notifyDiscordNewUser(user);
+            notifyTelegramNewUser(user);
         } else {
             boolean changed = false;
             if (user.getGoogleId() == null) {
@@ -129,11 +129,11 @@ public class AuthService {
         return user;
     }
 
-    private void notifyDiscordNewUser(User user) {
+    private void notifyTelegramNewUser(User user) {
         try {
-            discordNotificationService.notifyNewUser(user.getUsername(), user.getEmail());
+            telegramNotificationService.notifyNewUser(user.getUsername(), user.getEmail());
         } catch (Exception e) {
-            log.warn("Erro ao disparar notificação Discord para novo usuário {} <{}>: {}", user.getUsername(), user.getEmail(), e.getMessage());
+            log.warn("Erro ao disparar notificação Telegram para novo usuário {} <{}>: {}", user.getUsername(), user.getEmail(), e.getMessage());
         }
     }
 
@@ -175,6 +175,7 @@ public class AuthService {
         user = users.save(user);
         createFreeSubscription(user.getId());
         initVaultAsync(vaultId);
+        notifyTelegramNewUser(user);
         return buildAuthResponseWithTokenPair(user).withNewUserFlag(true);
     }
 

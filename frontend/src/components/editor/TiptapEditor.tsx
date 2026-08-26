@@ -317,7 +317,13 @@ export const TiptapEditor = forwardRef<TiptapEditorHandle, Props>(
         VaultPdf,
         VaultAudio,
         TaskList,
-        TaskItem.configure({ nested: true }),
+        TaskItem.configure({
+          nested: true,
+          // The current document position is resolved by the change listener
+          // below. Returning true prevents Tiptap from reverting the native
+          // checkbox while the editor is read-only.
+          onReadOnlyChecked: () => true,
+        }),
         HeadingFold.configure({
           onFoldChange: (indices) => onFoldChangeRef.current?.(indices),
         }),
@@ -540,6 +546,36 @@ export const TiptapEditor = forwardRef<TiptapEditorHandle, Props>(
       editor.setEditable(editable);
       const dom = editor.view?.dom as HTMLElement | undefined;
       dom?.classList.toggle("is-readonly", !editable);
+    }, [editor, editable]);
+
+    // Tiptap's read-only callback receives the node captured when its node view
+    // was created. After the first toggle that object is stale, so subsequent
+    // clicks can fail. Resolve the live task node from the clicked DOM element
+    // on every change instead.
+    useEffect(() => {
+      if (!editor || editable) return;
+      const dom = editor.view.dom;
+
+      const toggleReadOnlyTask = (event: Event) => {
+        const checkbox = event.target instanceof HTMLInputElement ? event.target : null;
+        if (!checkbox || checkbox.type !== "checkbox") return;
+        const taskItem = checkbox.closest<HTMLElement>('li[data-type="taskItem"]');
+        if (!taskItem || !dom.contains(taskItem)) return;
+
+        const position = editor.view.posAtDOM(taskItem, 0);
+        const node = editor.state.doc.nodeAt(position);
+        if (!node || node.type.name !== "taskItem") return;
+
+        editor.view.dispatch(
+          editor.state.tr.setNodeMarkup(position, undefined, {
+            ...node.attrs,
+            checked: checkbox.checked,
+          })
+        );
+      };
+
+      dom.addEventListener("change", toggleReadOnlyTask);
+      return () => dom.removeEventListener("change", toggleReadOnlyTask);
     }, [editor, editable]);
 
     // "/" command + toolbar upload entry point

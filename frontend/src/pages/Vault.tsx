@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { FilterChips } from "@/components/ui/filter-chips";
 import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
@@ -299,8 +300,15 @@ export default function Vault() {
   if (authLoading) {
     return (
       <AppLayout>
-        <div className="flex h-full items-center justify-center">
-          <Loader2 className="h-5 w-5 animate-spin text-white/40" />
+        <div className="mx-auto w-full max-w-6xl animate-fade-in px-4 py-8 sm:px-6">
+          <Skeleton className="h-3 w-20" />
+          <Skeleton className="mt-4 h-9 w-48" />
+          <Skeleton className="mt-6 h-2 w-full rounded-full" />
+          <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <Skeleton key={index} className="aspect-[4/3] w-full" />
+            ))}
+          </div>
         </div>
       </AppLayout>
     );

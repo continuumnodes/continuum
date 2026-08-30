@@ -366,7 +366,7 @@ export const TiptapEditor = forwardRef<TiptapEditorHandle, Props>(
       editable,
       editorProps: {
         attributes: {
-          class: `continuum-editor prose prose-sm dark:prose-invert max-w-none focus:outline-none min-h-[60vh] ${editable ? "" : "is-readonly"} ${className || ""}`,
+          class: `continuum-editor max-w-none focus:outline-none min-h-[60vh] ${editable ? "" : "is-readonly"} ${className || ""}`,
         },
         handleClickOn: (_view, _pos, node, _nodePos, event) => {
           const name = node.type.name;

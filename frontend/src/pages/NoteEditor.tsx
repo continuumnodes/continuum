@@ -85,8 +85,8 @@ export default function NoteEditor() {
   }, []);
 
   useEffect(() => {
-    document.documentElement.style.setProperty("--note-title-font-scale", `${noteTitleScale}%`);
-    document.documentElement.style.setProperty("--note-body-font-scale", `${noteBodyScale}%`);
+    document.documentElement.style.setProperty("--note-title-font-scale", String(noteTitleScale));
+    document.documentElement.style.setProperty("--note-body-font-scale", String(noteBodyScale));
   }, [noteTitleScale, noteBodyScale]);
 
   useEffect(() => {

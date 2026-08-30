@@ -651,8 +651,8 @@
 /* Continuum editor */
 @layer components {
   :root {
-    --note-title-font-scale: 100%;
-    --note-body-font-scale: 100%;
+    --note-title-font-scale: 100;
+    --note-body-font-scale: 100;
   }
 
   .continuum-editor {
@@ -664,11 +664,21 @@
   .continuum-editor,
   .continuum-editor .ProseMirror {
     font-size: calc(16px * var(--note-body-font-scale) / 100) !important;
+    line-height: 1.7;
   }
-  .continuum-editor :where(p, ul, ol, li, blockquote, table, td, th, pre, code, a, span) {
+  .continuum-editor .ProseMirror > * {
     font-size: inherit !important;
   }
-  .continuum-editor :where(p, li, blockquote, td, th) {
+  .continuum-editor .ProseMirror p,
+  .continuum-editor .ProseMirror li,
+  .continuum-editor .ProseMirror blockquote,
+  .continuum-editor .ProseMirror td,
+  .continuum-editor .ProseMirror th,
+  .continuum-editor .ProseMirror table,
+  .continuum-editor .ProseMirror code,
+  .continuum-editor .ProseMirror pre,
+  .continuum-editor .ProseMirror a,
+  .continuum-editor .ProseMirror span {
     font-size: calc(1em * var(--note-body-font-scale) / 100) !important;
   }
   .continuum-editor p { @apply my-2; }

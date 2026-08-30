@@ -230,6 +230,10 @@ public class MetricsService {
         persistSnapshot(user, series);
 
         List<ScoreDay> visible = withinHistoryWindow(user, series);
+        // If the history window filter results in empty data, show all available data instead
+        if (visible.isEmpty() && !series.isEmpty()) {
+            visible = series;
+        }
 
         List<ScoreInsights.Point> points = new ArrayList<>();
         for (int i = 0; i < visible.size(); i++) {

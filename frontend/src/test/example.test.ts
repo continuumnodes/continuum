@@ -6,12 +6,13 @@ describe("note font size", () => {
     localStorage.clear();
   });
 
-  it("resets the note font size to the default value", () => {
-    saveNoteFontSize({ scale: 150 });
-    expect(loadNoteFontSize().scale).toBe(150);
+  it("stores and resets title and body font sizes independently", () => {
+    saveNoteFontSize({ titleScale: 130, bodyScale: 90 });
+
+    expect(loadNoteFontSize()).toEqual({ titleScale: 130, bodyScale: 90 });
 
     resetNoteFontSize();
 
-    expect(loadNoteFontSize().scale).toBe(DEFAULT_NOTE_FONT_SIZE.scale);
+    expect(loadNoteFontSize()).toEqual(DEFAULT_NOTE_FONT_SIZE);
   });
 });

@@ -1,11 +1,13 @@
 import { preferencesApi } from "@/lib/api";
 
 export interface NoteFontSizeSettings {
-  scale: number;
+  titleScale: number;
+  bodyScale: number;
 }
 
 export const DEFAULT_NOTE_FONT_SIZE: NoteFontSizeSettings = {
-  scale: 100,
+  titleScale: 100,
+  bodyScale: 100,
 };
 
 const LS_KEY = "continuum:note-font-size";
@@ -15,6 +17,10 @@ let cache: NoteFontSizeSettings = readLocal();
 let loaded = false;
 let loadPromise: Promise<NoteFontSizeSettings> | null = null;
 let saveTimer: ReturnType<typeof setTimeout> | null = null;
+
+function clamp(value: number, min: number, max: number): number {
+  return Number.isFinite(value) ? Math.min(max, Math.max(min, value)) : DEFAULT_NOTE_FONT_SIZE.titleScale;
+}
 
 function readLocal(): NoteFontSizeSettings {
   try {
@@ -35,9 +41,13 @@ function safeParse(s: string): any {
 }
 
 function normalize(raw: any): NoteFontSizeSettings {
-  const value = Number(raw?.scale ?? raw?.noteFontSize ?? raw ?? DEFAULT_NOTE_FONT_SIZE.scale);
+  const legacyScale = Number(raw?.scale ?? raw?.noteFontSize ?? raw ?? DEFAULT_NOTE_FONT_SIZE.titleScale);
+  const titleValue = Number(raw?.titleScale ?? raw?.title ?? raw?.titleFontSize ?? legacyScale ?? DEFAULT_NOTE_FONT_SIZE.titleScale);
+  const bodyValue = Number(raw?.bodyScale ?? raw?.body ?? raw?.bodyFontSize ?? legacyScale ?? DEFAULT_NOTE_FONT_SIZE.bodyScale);
+
   return {
-    scale: Number.isFinite(value) ? Math.min(180, Math.max(80, value)) : DEFAULT_NOTE_FONT_SIZE.scale,
+    titleScale: clamp(titleValue, 80, 180),
+    bodyScale: clamp(bodyValue, 80, 180),
   };
 }
 
@@ -51,13 +61,13 @@ export function loadNoteFontSize(): NoteFontSizeSettings {
     loadPromise = (async () => {
       try {
         const prefs = await fetchPreferences();
-        if (typeof prefs?.noteFontSize === "number") {
-          cache = normalize(prefs.noteFontSize);
-          writeLocal(cache);
-        } else if (prefs?.noteFontSize != null) {
-          cache = normalize(prefs.noteFontSize);
-          writeLocal(cache);
-        }
+        const merged = {
+          ...(prefs && typeof prefs === "object" ? prefs : {}),
+          ...(typeof prefs?.noteFontSize === "object" && prefs.noteFontSize ? prefs.noteFontSize : {}),
+        };
+
+        cache = normalize(merged);
+        writeLocal(cache);
       } catch {
         cache = readLocal();
       } finally {
@@ -71,8 +81,12 @@ export function loadNoteFontSize(): NoteFontSizeSettings {
   return cache;
 }
 
-export function saveNoteFontSize(settings: NoteFontSizeSettings) {
-  const next = normalize(settings);
+export function saveNoteFontSize(settings: Partial<NoteFontSizeSettings>) {
+  const next = normalize({
+    ...cache,
+    ...settings,
+  });
+
   cache = next;
   writeLocal(next);
   listeners.forEach((listener) => listener(next));
@@ -83,10 +97,16 @@ export function saveNoteFontSize(settings: NoteFontSizeSettings) {
     try {
       let existing: any = {};
       try { existing = await fetchPreferences(); } catch { /* ignore */ }
-      await preferencesApi.save({
+      const payload = {
         ...(existing && typeof existing === "object" ? existing : {}),
-        noteFontSize: next.scale,
-      });
+        titleScale: next.titleScale,
+        bodyScale: next.bodyScale,
+        noteFontSize: {
+          titleScale: next.titleScale,
+          bodyScale: next.bodyScale,
+        },
+      };
+      await preferencesApi.save(payload);
     } catch { /* keep local cache */ }
   }, 500);
 }

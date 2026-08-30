@@ -658,7 +658,18 @@
   .continuum-editor {
     @apply text-foreground leading-relaxed;
     font-family: 'Inter', system-ui, sans-serif;
-    font-size: calc(16px * var(--note-body-font-scale) / 100);
+    font-size: calc(16px * var(--note-body-font-scale) / 100) !important;
+    line-height: 1.7;
+  }
+  .continuum-editor,
+  .continuum-editor .ProseMirror {
+    font-size: calc(16px * var(--note-body-font-scale) / 100) !important;
+  }
+  .continuum-editor :where(p, ul, ol, li, blockquote, table, td, th, pre, code, a, span) {
+    font-size: inherit !important;
+  }
+  .continuum-editor :where(p, li, blockquote, td, th) {
+    font-size: calc(1em * var(--note-body-font-scale) / 100) !important;
   }
   .continuum-editor p { @apply my-2; }
   .continuum-editor h1 { @apply text-3xl font-serif mt-8 mb-3 tracking-tight; }

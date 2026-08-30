@@ -223,7 +223,11 @@ public class MetricsService {
         List<ScoreDay> series = buildScoreSeries(user);
 
         if (series.isEmpty()) {
-            return new ScoreInsights(List.of(), List.of(),
+            // For brand new users with no activity, return at least today's entry (score 0)
+            // This ensures the UI doesn't show an empty graph
+            LocalDate today = tech.lemnova.continuum.infra.web.RequestZone.today();
+            ScoreInsights.Point emptyToday = new ScoreInsights.Point(today, 0.0, 0.0, 0.0, Map.of());
+            return new ScoreInsights(List.of(emptyToday), List.of(),
                     new ScoreInsights.Comparison(0, 0, 0, 0, null, 0, 0, true), List.of());
         }
 

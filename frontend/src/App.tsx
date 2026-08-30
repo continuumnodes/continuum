@@ -1,6 +1,6 @@
 import * as React from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { HashRouter, Route, Routes, Navigate, useLocation } from "react-router-dom";
+import { BrowserRouter, Route, Routes, Navigate, useLocation } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
@@ -61,7 +61,7 @@ function RouteFallback() {
 function HomeRoute() {
   const { user, loading } = useAuth();
   // Read tokens once per mount so we don't recompute on every render.
-  const [hasIncomingToken] = React.useState(() => {
+  const [hasIncomingToken, setHasIncomingToken] = React.useState(() => {
     const t = extractAuthTokensFromLocation();
     return !!t?.accessToken;
   });
@@ -70,7 +70,7 @@ function HomeRoute() {
     if (!hasIncomingToken) sanitizeAuthRedirectUrl();
   }, [hasIncomingToken]);
 
-  if (hasIncomingToken) return <LoginSuccess />;
+  if (hasIncomingToken) return <LoginSuccess onDone={() => setHasIncomingToken(false)} />;
 
   if (loading) return <RouteFallback />;
   if (user) return <Dashboard />;
@@ -149,7 +149,7 @@ const App = () => (
         <GlobalProgress />
         <Toaster />
         <Sonner />
-        <HashRouter>
+        <BrowserRouter>
           <LanguageProvider>
             <AuthProvider>
               <UsageProvider>
@@ -159,7 +159,7 @@ const App = () => (
               </UsageProvider>
             </AuthProvider>
           </LanguageProvider>
-        </HashRouter>
+        </BrowserRouter>
       </TooltipProvider>
     </ThemeProvider>
     <Analytics />

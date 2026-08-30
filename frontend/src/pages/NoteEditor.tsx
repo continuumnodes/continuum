@@ -31,6 +31,7 @@ import {
 import { useLanguage } from "@/contexts/LanguageContext";
 import { getNoteFoldsSync, loadNoteFolds, saveNoteFolds } from "@/lib/note-folds";
 import { getEditorReadOnlySync, loadEditorReadOnly, saveEditorReadOnly } from "@/lib/editor-mode";
+import { loadNoteFontSize, subscribeNoteFontSize } from "@/lib/note-font-size";
 
 interface NoteData {
   id: string;
@@ -72,6 +73,16 @@ export default function NoteEditor() {
   const [showBacklinks, setShowBacklinks] = useState(false);
   // The last mode the user left the editor in (view or edit) is restored.
   const [readOnly, setReadOnly] = useState<boolean>(() => getEditorReadOnlySync());
+  const [noteFontScale, setNoteFontScale] = useState<number>(() => loadNoteFontSize().scale);
+
+  useEffect(() => {
+    const unsubscribe = subscribeNoteFontSize((settings) => setNoteFontScale(settings.scale));
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    document.documentElement.style.setProperty("--note-font-scale", `${noteFontScale}%`);
+  }, [noteFontScale]);
 
   useEffect(() => {
     void loadEditorReadOnly().then((v) => setReadOnly(v));
@@ -509,6 +520,7 @@ export default function NoteEditor() {
                 readOnly={readOnly}
                 placeholder={t("ed_untitled_note")}
                 className="text-5xl lg:text-6xl font-display font-bold border-0 px-0 focus-visible:ring-0 bg-transparent text-foreground mb-8 h-auto placeholder:text-muted-foreground/30 tracking-tight"
+                style={{ fontSize: `${Math.max(2.2, 3.1 * (noteFontScale / 100))}rem` }}
               />
 
               {currentJSON.current && (

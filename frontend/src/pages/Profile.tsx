@@ -38,6 +38,7 @@ import { toast as sonnerToast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import WallpaperSettings from "@/components/profile/WallpaperSettings";
+import { DEFAULT_NOTE_FONT_SIZE, loadNoteFontSize, resetNoteFontSize, saveNoteFontSize, subscribeNoteFontSize } from "@/lib/note-font-size";
 
 /* ── Shared building blocks ──────────────────────────────────────────── */
 
@@ -146,6 +147,23 @@ export default function Profile() {
 
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
+  const [noteFontScale, setNoteFontScale] = useState<number>(() => loadNoteFontSize().scale);
+
+  useEffect(() => {
+    const unsubscribe = subscribeNoteFontSize((settings) => setNoteFontScale(settings.scale));
+    return () => unsubscribe();
+  }, []);
+
+  const updateNoteFontScale = (value: number) => {
+    const nextValue = Math.round(value);
+    setNoteFontScale(nextValue);
+    saveNoteFontSize({ scale: nextValue });
+  };
+
+  const resetNoteFontScale = () => {
+    setNoteFontScale(DEFAULT_NOTE_FONT_SIZE.scale);
+    resetNoteFontSize();
+  };
 
   const handleExportData = async () => {
     if (exporting) return;
@@ -346,7 +364,38 @@ export default function Profile() {
                 subtitle={t("profile_secureAuthDesc")}
               />
               <OfflineSyncRow />
-              <div className="p-4 sm:p-5">
+              <div className="space-y-4 p-4 sm:p-5">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-xs font-medium text-foreground/80">Note font size</p>
+                      <p className="mt-0.5 text-xs text-muted-foreground">Adjust title and body text in every note.</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-[10px] tabular-nums text-muted-foreground">{noteFontScale}%</span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={resetNoteFontScale}
+                        disabled={noteFontScale === DEFAULT_NOTE_FONT_SIZE.scale}
+                        className="h-7 px-2 text-[10px] normal-case"
+                      >
+                        Reset
+                      </Button>
+                    </div>
+                  </div>
+                  <input
+                    type="range"
+                    min={80}
+                    max={180}
+                    step={5}
+                    value={noteFontScale}
+                    onChange={(e) => updateNoteFontScale(Number(e.target.value))}
+                    className="w-full accent-primary"
+                    aria-label="Note font size"
+                  />
+                </div>
                 <WallpaperSettings />
               </div>
             </CardContent>

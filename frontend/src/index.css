@@ -650,7 +650,15 @@
 
 /* Continuum editor */
 @layer components {
-  .continuum-editor { @apply text-foreground leading-relaxed; font-family: 'Inter', system-ui, sans-serif; font-size: 16px; }
+  :root {
+    --note-font-scale: 100%;
+  }
+
+  .continuum-editor {
+    @apply text-foreground leading-relaxed;
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: calc(16px * var(--note-font-scale) / 100);
+  }
   .continuum-editor p { @apply my-2; }
   .continuum-editor h1 { @apply text-3xl font-serif mt-8 mb-3 tracking-tight; }
   .continuum-editor h2 { @apply text-2xl font-serif mt-7 mb-2 tracking-tight; }

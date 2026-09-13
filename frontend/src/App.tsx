@@ -15,14 +15,18 @@ import { PageTransition } from "@/components/motion/PageTransition";
 import { GlobalProgress } from "@/components/motion/GlobalProgress";
 import { extractAuthTokensFromLocation, sanitizeAuthRedirectUrl } from "@/lib/auth-redirect";
 import { EMAIL_AUTH_ENABLED } from "@/lib/dev-mode";
+import UpdateDialog from "@/components/updater/UpdateDialog";
 
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 
+// Capacitor: aplica cor da status bar só quando rodando dentro do APK nativo
+import { Capacitor } from "@capacitor/core";
+import { StatusBar, Style } from "@capacitor/status-bar";
+
 // Auth-critical screens stay eager (they gate the first paint); everything else
 // is code-split and streamed in behind a skeleton.
 import LoginSuccess from "./pages/LoginSuccess";
-import Dashboard from "./pages/Dashboard";
 import LandingPage from "./pages/LandingPage";
 
 const Login = React.lazy(() => import("./pages/Login"));
@@ -43,6 +47,7 @@ const Privacy = React.lazy(() => import("./pages/Privacy"));
 const Support = React.lazy(() => import("./pages/Support"));
 const About = React.lazy(() => import("./pages/About"));
 const Pricing = React.lazy(() => import("./pages/Pricing"));
+const Versions = React.lazy(() => import("./pages/Versions"));
 const Subscription = React.lazy(() => import("./pages/Subscription"));
 const Profile = React.lazy(() => import("./pages/Profile"));
 const NotFound = React.lazy(() => import("./pages/NotFound"));
@@ -73,7 +78,7 @@ function HomeRoute() {
   if (hasIncomingToken) return <LoginSuccess onDone={() => setHasIncomingToken(false)} />;
 
   if (loading) return <RouteFallback />;
-  if (user) return <Dashboard />;
+  if (user) return <Notes />;
   return <LandingPage />;
 }
 
@@ -100,7 +105,7 @@ const AppRoutes = () => {
           <Routes location={location}>
     <Route path="/" element={<HomeRoute />} />
     <Route path="/index" element={<HomeRoute />} />
-    <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+    <Route path="/dashboard" element={<Navigate to="/notes" replace />} />
     <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
     <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
     <Route
@@ -116,6 +121,7 @@ const AppRoutes = () => {
     <Route path="/support" element={<Support />} />
     <Route path="/about" element={<About />} />
     <Route path="/pricing" element={<Pricing />} />
+    <Route path="/versions" element={<Versions />} />
     <Route path="/notes" element={<ProtectedRoute><Notes /></ProtectedRoute>} />
     <Route path="/notes/:id" element={<ProtectedRoute><NoteEditor /></ProtectedRoute>} />
     <Route path="/entities" element={<ProtectedRoute><Entities /></ProtectedRoute>} />
@@ -142,29 +148,39 @@ const AppRoutes = () => {
   );
 };
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <ThemeProvider>
-      <TooltipProvider>
-        <GlobalProgress />
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <LanguageProvider>
-            <AuthProvider>
-              <UsageProvider>
-                <EntityProvider>
-                  <AppRoutes />
-                </EntityProvider>
-              </UsageProvider>
-            </AuthProvider>
-          </LanguageProvider>
-        </BrowserRouter>
-      </TooltipProvider>
-    </ThemeProvider>
-    <Analytics />
-    <SpeedInsights />
-  </QueryClientProvider>
-);
+const App = () => {
+  React.useEffect(() => {
+    if (Capacitor.isNativePlatform()) {
+      StatusBar.setBackgroundColor({ color: "#000000" });
+      StatusBar.setStyle({ style: Style.Dark });
+    }
+  }, []);
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider>
+        <TooltipProvider>
+          <GlobalProgress />
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <LanguageProvider>
+              <AuthProvider>
+                <UsageProvider>
+                  <EntityProvider>
+                    <AppRoutes />
+                    <UpdateDialog />
+                  </EntityProvider>
+                </UsageProvider>
+              </AuthProvider>
+            </LanguageProvider>
+          </BrowserRouter>
+        </TooltipProvider>
+      </ThemeProvider>
+      <Analytics />
+      <SpeedInsights />
+    </QueryClientProvider>
+  );
+};
 
 export default App;

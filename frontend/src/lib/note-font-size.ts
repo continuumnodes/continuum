@@ -115,8 +115,11 @@ export function resetNoteFontSize() {
   return saveNoteFontSize(DEFAULT_NOTE_FONT_SIZE);
 }
 
-export function subscribeNoteFontSize(fn: (s: NoteFontSizeSettings) => void) {
+export function subscribeNoteFontSize(fn: (s: NoteFontSizeSettings) => void): () => void {
   listeners.add(fn);
   if (!loaded) loadNoteFontSize();
-  return () => listeners.delete(fn);
+  return () => {
+    listeners.delete(fn);
+  };
 }
+

@@ -14,9 +14,12 @@ export default function Footer() {
       links: [
         { label: t("lp_footer_pricing"), href: "/pricing" },
         { label: t("lp_footer_about"), href: "/about" },
+        { label: t("lp_footer_opensource"), href: "https://github.com/continuumnodes/continuum" },
         { label: t("lp_footer_support"), href: "/support" },
+        { label: "Versions", href: "/versions" },
       ],
     },
+
     {
       title: t("lp_footer_legal"),
       links: [
@@ -27,7 +30,7 @@ export default function Footer() {
     {
       title: t("lp_footer_contact"),
       links: [
-        { label: "contact@continuum.onl", href: "mailto:contact@continuum.onl" },
+        { label: "cmontact@continuum.onl", href: "mailto:contact@continuum.onl" },
         { label: "feedback@continuum.onl", href: "mailto:feedback@continuum.onl" },
       ],
     },
@@ -51,7 +54,7 @@ export default function Footer() {
               <AppLogo />
               <span
                 className="text-white font-semibold tracking-tight text-[1.05rem]"
-                style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
+                style={{ fontFamily: "'Inter', sans-serif", fontWeight: 700 }}
               >
                 Continuum
               </span>

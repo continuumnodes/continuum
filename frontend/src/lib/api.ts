@@ -238,7 +238,13 @@ class RefreshTokenManager {
         console.log("[RefreshTokenManager] Token renovado com sucesso");
         
         // Atualiza tokens (pode vir novo refresh token por rotation)
-        setAuthTokens(data.accessToken, data.refreshToken);
+        // O endpoint pode não rotacionar o refresh token. Nesse caso, preserve
+        // o token atual em vez de apagá-lo ao salvar apenas o novo access token.
+        if (data.refreshToken) {
+          setAuthTokens(data.accessToken, data.refreshToken);
+        } else {
+          setAuthTokens(data.accessToken);
+        }
 
         // Processa fila de requisições
         this.processQueue(data.accessToken);
@@ -412,6 +418,8 @@ export const notesApi = {
   delete: (id: string) => api.delete(`/api/notes/${id}`),
   toggleFavorite: (id: string) => api.patch(`/api/notes/${id}/favorite`),
   getBacklinks: (id: string) => api.get(`/api/notes/${id}/backlinks`),
+  getForwardLinks: (id: string) => api.get(`/api/notes/${id}/forward-links`),
+  getBacklinkCount: (id: string) => api.get(`/api/notes/${id}/backlink-count`),
   getTypes: () => api.get("/api/notes/types"),
 };
 
@@ -567,6 +575,7 @@ export const importApi = {
   },
   commitMarkdown: (payload: unknown) =>
     api.post("/api/import/markdown/commit", payload, { timeout: 120000 }),
+  relinkEntities: () => api.post("/api/import/entities/relink", {}, { timeout: 180000 }),
 };
 
 export default api;
